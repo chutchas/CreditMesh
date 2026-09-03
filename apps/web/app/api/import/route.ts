@@ -12,6 +12,7 @@ import {
   applyPartyRows,
   applyRegistryProfileRows,
   applyShareholderRows,
+  applyOrderBlockRows,
   applySupplierCommitmentRows,
   type ApplyContext,
 } from '../../../lib/ingest';
@@ -120,6 +121,9 @@ export async function POST(request: Request) {
       break;
     case 'collateral_allocation':
       apply = await applyCollateralAllocationRows(ctx, result.rows);
+      break;
+    case 'order_block':
+      apply = await applyOrderBlockRows(ctx, result.rows, baseCurrency);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

@@ -232,6 +232,25 @@ export const DATASETS: DatasetSpec[] = [
       { canonicalField: 'validTo', type: 'date', required: false, aliases: ['valid_to', 'to_date', 'วันที่สิ้นสุด'], description: 'Allocation valid to' },
     ],
   },
+  {
+    datasetId: 'order_block',
+    entity: 'order_block',
+    labelTh: 'ออเดอร์ที่ถูกระงับ',
+    labelEn: 'Held sales orders',
+    naturalKey: ['legalEntityCode', 'orderRef'],
+    columns: [
+      { canonicalField: 'legalEntityCode', type: 'string', required: true, aliases: ['legal_entity', 'entity', 'company_code', 'bu', 'นิติบุคคล'], description: 'Legal entity that raised the order' },
+      { canonicalField: 'orderRef', type: 'string', required: true, aliases: ['order_ref', 'order_no', 'sales_order', 'so_no', 'document_no', 'เลขที่ออเดอร์', 'เลขที่ใบสั่งขาย'], description: 'Sales order number in the source system' },
+      { canonicalField: 'partySourceCode', type: 'string', required: true, aliases: ['customer_code', 'customer_no', 'source_code', 'party_code', 'account', 'รหัสลูกค้า'], description: 'Customer code, as in the counterparty register' },
+      { canonicalField: 'orderDate', type: 'date', required: false, aliases: ['order_date', 'document_date', 'วันที่ออเดอร์'], description: 'Order date' },
+      { canonicalField: 'orderAmount', type: 'number', required: true, aliases: ['order_amount', 'amount', 'net_value', 'value', 'มูลค่า', 'ยอดออเดอร์'], description: 'Order value' },
+      { canonicalField: 'currency', type: 'string', required: false, aliases: ['currency', 'curr', 'สกุลเงิน'], description: 'Currency' },
+      { canonicalField: 'blockCode', type: 'string', required: false, aliases: ['block_code', 'block', 'credit_block', 'reason_code', 'รหัสการระงับ'], description: "The source system's own block code, stored verbatim" },
+      { canonicalField: 'blockReason', type: 'string', required: false, aliases: ['block_reason', 'reason', 'block_text', 'เหตุผล', 'สาเหตุการระงับ'], description: "The source system's own words for the block" },
+      { canonicalField: 'blockedAt', type: 'date', required: true, aliases: ['blocked_at', 'block_date', 'blocked_on', 'วันที่ระงับ'], description: 'When the order was blocked' },
+      { canonicalField: 'status', type: 'enum', required: false, enumValues: ['blocked', 'released', 'cancelled'], aliases: ['status', 'สถานะ'], description: 'Status (defaults to blocked)' },
+    ],
+  },
 ];
 
 export function getDataset(datasetId: string): DatasetSpec | undefined {

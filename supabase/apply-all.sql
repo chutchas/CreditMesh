@@ -1,11 +1,13 @@
 -- CreditMesh — all migrations concatenated, in order.
--- Generated from supabase/migrations/. Paste into the Supabase SQL editor if
--- you are not using the CLI. Running it twice will fail on the CREATE TYPE
--- statements — that is intentional, it is not an idempotent script.
+-- Generated from supabase/migrations/ by scripts/build-apply-all.mjs.
+-- Paste into the Supabase SQL editor if you are not using the CLI. Running it
+-- twice will fail on the CREATE TYPE statements — that is intentional, it is
+-- not an idempotent script.
 
 -- ============================================================
 -- migrations/20260903000100_foundation.sql
 -- ============================================================
+
 -- CreditMesh — 0001 Foundation: tenants, profile versioning, users, helpers.
 --
 -- Multi-tenancy note (Spec §11): the first release deploys one database per
@@ -138,6 +140,7 @@ $$;
 -- ============================================================
 -- migrations/20260903000200_party.sql
 -- ============================================================
+
 -- CreditMesh — 0002 Party (Golden Party Record, Module 0).
 --
 -- P3: there is no customer table and no supplier table. One company is
@@ -264,6 +267,7 @@ create trigger party_touch_updated_at
 -- ============================================================
 -- migrations/20260903000300_receivables.sql
 -- ============================================================
+
 -- CreditMesh — 0003 Receivables, limits and exposure.
 
 create table public.ar_item (
@@ -354,6 +358,7 @@ create table public.payment_behavior (
 -- ============================================================
 -- migrations/20260903000400_collateral.sql
 -- ============================================================
+
 -- CreditMesh — 0004 Collateral.
 --
 -- P4: there is no `bg` table. Spec §6 is explicit that starting with one and
@@ -465,6 +470,7 @@ group by c.id;
 -- ============================================================
 -- migrations/20260903000500_enrichment_risk.sql
 -- ============================================================
+
 -- CreditMesh — 0005 Enrichment, financials and risk.
 --
 -- The platform never resells counterparty data (§3, §12). Each tenant supplies
@@ -565,6 +571,7 @@ create index risk_assessment_grade_idx on public.risk_assessment (tenant_id, gra
 -- ============================================================
 -- migrations/20260903000600_ingestion_audit.sql
 -- ============================================================
+
 -- CreditMesh — 0006 Ingestion and audit.
 
 create type public.import_status as enum ('pending', 'validating', 'applied', 'failed', 'rejected');
@@ -625,6 +632,7 @@ create index audit_log_object_idx on public.audit_log (tenant_id, object_type, o
 -- ============================================================
 -- migrations/20260903000700_rls.sql
 -- ============================================================
+
 -- CreditMesh — 0007 Row level security.
 --
 -- Two rules, applied consistently:
@@ -808,6 +816,7 @@ alter view public.collateral_balance set (security_invoker = on);
 -- ============================================================
 -- migrations/20260903000800_views.sql
 -- ============================================================
+
 -- CreditMesh — 0008 Read models for the Portfolio X-ray.
 --
 -- These exist so a portfolio screen is one query rather than a fan-out of
@@ -920,6 +929,7 @@ $$;
 -- ============================================================
 -- migrations/20260903000900_party_identifier_key.sql
 -- ============================================================
+
 -- CreditMesh — 0009 Fix the party_identifier uniqueness key.
 --
 -- 0002 declared uniqueness as an expression index over coalesce(system_id, '')
@@ -955,6 +965,7 @@ create unique index party_identifier_unique
 -- ============================================================
 -- migrations/20260903001000_registry_and_groups.sql
 -- ============================================================
+
 -- CreditMesh — 0010 Registry profile, group proposals, group exposure.
 --
 -- Module 2 needs three things the receivables side does not provide: the
@@ -1073,6 +1084,7 @@ create policy group_exclusion_suggestion_read on public.group_exclusion_suggesti
 -- ============================================================
 -- migrations/20260903001100_group_limit_context.sql
 -- ============================================================
+
 -- CreditMesh — 0011 Give the group limit figure its context.
 --
 -- v_group_exposure already sums the credit limits of a group's members, and
@@ -1116,6 +1128,7 @@ alter view public.v_group_exposure set (security_invoker = on);
 -- ============================================================
 -- migrations/20260903001200_supplier_commitment.sql
 -- ============================================================
+
 -- CreditMesh — 0012 Supplier commitments (Module 9).
 --
 -- Module 9 reuses the Financial Analysis Engine unchanged; the only thing it
@@ -1191,6 +1204,7 @@ create policy supplier_commitment_read on public.supplier_commitment
 -- ============================================================
 -- migrations/20260903001300_collateral_allocation_key.sql
 -- ============================================================
+
 -- CreditMesh — 0013 A natural key for collateral allocations.
 --
 -- 0004 created collateral_allocation with a surrogate id and nothing else, so
@@ -1216,3 +1230,121 @@ where a.ctid > b.ctid
 create unique index collateral_allocation_natural_key
   on public.collateral_allocation (tenant_id, collateral_id, legal_entity_code, valid_from);
 
+-- ============================================================
+-- migrations/20260903001400_order_block.sql
+-- ============================================================
+
+-- CreditMesh — 0014 Held sales orders (Module 11).
+--
+-- The source system blocks the order; we never do, and in this phase we never
+-- release one either (P5). What lives here is the block as the ERP reported it
+-- plus the decision a human recorded about it, so that the release which
+-- happens in SAP an hour later has a written reason attached to it here.
+--
+-- `block_code` and `block_reason` are the source's own words, stored verbatim.
+-- The engine's diagnosis is computed at read time and deliberately not stored:
+-- it is a function of today's exposure, limits and collateral, and a cached
+-- copy would quietly go stale and be believed.
+
+create table public.sales_order_block (
+  id                uuid primary key default gen_random_uuid(),
+  tenant_id         uuid not null references public.tenant(id) on delete cascade,
+  party_id          uuid not null references public.party(id) on delete cascade,
+  legal_entity_code text not null,
+  order_ref         text not null,
+  order_date        date,
+  order_amount      numeric(20,2) not null,
+  currency          char(3) not null,
+  -- The source system's classification, kept as given. We do not map it onto
+  -- our own cause codes: their taxonomy is theirs and changes without notice.
+  block_code        text,
+  block_reason      text,
+  blocked_at        timestamptz not null,
+  status            text not null default 'blocked'
+                    check (status in ('blocked', 'released', 'cancelled')),
+  released_at       timestamptz,
+  source_ref        text,
+  updated_at        timestamptz not null default now(),
+  unique (tenant_id, legal_entity_code, order_ref),
+  foreign key (tenant_id, legal_entity_code) references public.legal_entity(tenant_id, code)
+);
+
+create index sales_order_block_open_idx
+  on public.sales_order_block (tenant_id, blocked_at desc) where status = 'blocked';
+create index sales_order_block_party_idx on public.sales_order_block (tenant_id, party_id);
+
+-- A decision is a record of what a person concluded and why, not an
+-- instruction to any other system. `outcome` deliberately has no
+-- "release" value: nobody releases anything from here, they recommend it and
+-- then act in the ERP. Calling the button Release would make the audit trail
+-- claim an action the platform never performed.
+create table public.order_block_decision (
+  id            uuid primary key default gen_random_uuid(),
+  tenant_id     uuid not null references public.tenant(id) on delete cascade,
+  block_id      uuid not null references public.sales_order_block(id) on delete cascade,
+  outcome       text not null
+                check (outcome in ('recommend_release', 'hold', 'partial', 'escalate', 'reject')),
+  reason        text not null,
+  -- The diagnosis as it stood when the decision was made. This one IS stored,
+  -- because the point of an audit trail is what was known at the time (P6).
+  evidence      jsonb not null default '{}'::jsonb,
+  decided_by    uuid references auth.users(id),
+  decided_at    timestamptz not null default now()
+);
+
+create index order_block_decision_block_idx
+  on public.order_block_decision (tenant_id, block_id, decided_at desc);
+
+-- Open blocks with the context the cockpit needs, in one round trip. The
+-- diagnosis itself is computed in the engine, not here — SQL is a poor place
+-- to keep a rule an auditor has to read.
+create view public.v_order_block_open as
+select
+  b.id                          as block_id,
+  b.tenant_id,
+  b.party_id,
+  p.legal_name,
+  p.tax_id,
+  b.legal_entity_code,
+  b.order_ref,
+  b.order_date,
+  b.order_amount,
+  b.currency,
+  b.block_code,
+  b.block_reason,
+  b.blocked_at,
+  e.ar_open,
+  e.ar_overdue,
+  e.total_exposure,
+  e.credit_limit,
+  r.score,
+  r.grade,
+  d.outcome                     as last_outcome,
+  d.decided_at                  as last_decided_at
+from public.sales_order_block b
+join public.party p on p.id = b.party_id
+left join public.v_exposure_current e
+  on e.tenant_id = b.tenant_id and e.party_id = b.party_id and e.legal_entity_code = b.legal_entity_code
+left join public.v_risk_current r
+  on r.tenant_id = b.tenant_id and r.party_id = b.party_id
+left join lateral (
+  select outcome, decided_at
+  from public.order_block_decision x
+  where x.block_id = b.id
+  order by x.decided_at desc
+  limit 1
+) d on true
+where b.status = 'blocked';
+
+alter view public.v_order_block_open set (security_invoker = on);
+
+alter table public.sales_order_block enable row level security;
+alter table public.order_block_decision enable row level security;
+
+create policy sales_order_block_read on public.sales_order_block
+  for select to authenticated
+  using (tenant_id = public.current_tenant_id() and public.has_entity_access(legal_entity_code));
+
+create policy order_block_decision_read on public.order_block_decision
+  for select to authenticated
+  using (tenant_id = public.current_tenant_id());

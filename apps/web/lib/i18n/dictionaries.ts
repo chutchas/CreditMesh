@@ -18,7 +18,35 @@ export interface Dictionary {
     string
   >;
   nav: Record<
-    'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'simulator' | 'import' | 'admin',
+    'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'orders' | 'simulator'
+    | 'import' | 'admin',
+    string
+  >;
+  navSection: Record<'understand' | 'protect' | 'decide' | 'operate' | 'setup', string>;
+  orders: Record<
+    'title' | 'subtitle' | 'readOnlyNote' | 'noData' | 'noDataHint' | 'blockedCount' | 'blockedValue'
+    | 'clearableByCollection' | 'aged' | 'unexplained' | 'unexplainedNote' | 'daysShort' | 'blockedOn'
+    | 'sourceSays' | 'orderValue' | 'why' | 'remedies' | 'impact' | 'exposureAfter' | 'headroomAfter'
+    | 'utilizationAfter' | 'uncoveredAfter' | 'groupExposureAfter' | 'noLimit' | 'lastDecision'
+    | 'noDecisionYet' | 'decide' | 'reason' | 'reasonPlaceholder' | 'reasonRequired' | 'saving' | 'saved'
+    | 'outcomeRecommendRelease' | 'outcomeHold' | 'outcomePartial' | 'outcomeEscalate' | 'outcomeReject'
+    | 'priorityNote',
+    string
+  >;
+  orderCauses: Record<
+    'limit_exceeded' | 'no_limit_set' | 'limit_expired' | 'overdue_balance' | 'collateral_expired'
+    | 'collateral_shortfall' | 'worst_risk_grade' | 'group_limit_pressure' | 'not_visible',
+    string
+  >;
+  orderRemedies: Record<
+    'collect_overdue' | 'raise_limit' | 'add_collateral' | 'partial_release' | 'prepayment'
+    | 'renew_limit' | 'credit_review' | 'ask_source_system',
+    string
+  >;
+  orderDetail: Record<
+    'creditLimit' | 'exposure' | 'orderAmount' | 'shortfall' | 'arOverdue' | 'maxOpenDpd'
+    | 'limitValidTo' | 'expiredFaceValue' | 'available' | 'uncoveredNow' | 'uncoveredAfterRelease'
+    | 'groupExposureAfter' | 'maxSingleLimit' | 'grade' | 'score' | 'blockCode' | 'blockReason',
     string
   >;
   collateral: Record<
@@ -122,10 +150,101 @@ const th: Dictionary = {
     portfolio: 'พอร์ตคู่สัญญา',
     groups: 'กลุ่มทุน',
     suppliers: 'ซัพพลายเออร์',
+    orders: 'ออเดอร์ที่ถูกระงับ',
     collateral: 'หลักประกัน',
     simulator: 'จำลองเทอมเครดิต',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
+  },
+  navSection: {
+    understand: 'ทำความเข้าใจ',
+    protect: 'ป้องกัน',
+    decide: 'ตัดสินใจ',
+    operate: 'ปฏิบัติการ',
+    setup: 'ตั้งค่า',
+  },
+  orders: {
+    title: 'ออเดอร์ที่ถูกระงับ',
+    subtitle: 'ติดเพราะอะไร แก้ได้ด้วยอะไร และถ้าปล่อยไปจะเกิดอะไรขึ้น',
+    readOnlyNote:
+      'แพลตฟอร์มไม่ปลดออเดอร์ให้ ระบบต้นทางเป็นผู้ระงับและเป็นผู้ปลด หน้านี้บันทึกว่าใครตัดสินใจอะไรด้วยเหตุผลใด และตัวเลขที่เห็นตอนตัดสินใจคืออะไร',
+    noData: 'ยังไม่มีออเดอร์ที่ถูกระงับ',
+    noDataHint: 'อัปโหลดชุดข้อมูล “ออเดอร์ที่ถูกระงับ” ที่หน้านำเข้าข้อมูล',
+    blockedCount: 'ออเดอร์ที่ค้างอยู่',
+    blockedValue: 'มูลค่าที่ค้าง',
+    clearableByCollection: 'ปลดได้ถ้าเก็บเงินได้',
+    aged: 'ค้างเกินเกณฑ์ / นานสุด',
+    unexplained: 'อธิบายไม่ได้จากข้อมูลเรา',
+    unexplainedNote:
+      'มีออเดอร์ที่ระบบต้นทางระงับไว้ แต่ข้อมูลใน CreditMesh ไม่มีอะไรอธิบายได้ อาจเป็นกติกาที่อยู่ใน ERP เท่านั้น หรือข้อมูลบางชุดยังไม่ได้นำเข้า — ตรวจที่ระบบต้นทางก่อน อย่าเดา',
+    daysShort: ' วัน',
+    blockedOn: 'ระงับเมื่อ',
+    sourceSays: 'ระบบต้นทางระบุว่า',
+    orderValue: 'มูลค่าออเดอร์',
+    why: 'ติดเพราะอะไร',
+    remedies: 'ทางแก้',
+    impact: 'ถ้าปล่อยไป',
+    exposureAfter: 'Exposure',
+    headroomAfter: 'วงเงินคงเหลือ',
+    utilizationAfter: 'อัตราการใช้วงเงิน',
+    uncoveredAfter: 'ส่วนที่ไม่มีหลักประกัน',
+    groupExposureAfter: 'Exposure ทั้งกลุ่ม',
+    noLimit: 'ไม่มีวงเงิน',
+    lastDecision: 'การตัดสินใจล่าสุด',
+    noDecisionYet: 'ยังไม่มีการบันทึกการตัดสินใจ',
+    decide: 'บันทึกการตัดสินใจ',
+    reason: 'เหตุผล (จำเป็น)',
+    reasonPlaceholder: 'เช่น ลูกค้าโอนแล้วรอ clearing พรุ่งนี้ · มี BG คุ้มครองส่วนที่เกิน',
+    reasonRequired: 'ต้องระบุเหตุผล',
+    saving: 'กำลังบันทึก…',
+    saved: 'บันทึกแล้ว',
+    outcomeRecommendRelease: 'เสนอให้ปลด',
+    outcomeHold: 'ให้ระงับต่อ',
+    outcomePartial: 'ปล่อยบางส่วน',
+    outcomeEscalate: 'ส่งต่อผู้มีอำนาจ',
+    outcomeReject: 'ไม่อนุมัติ',
+    priorityNote:
+      'ลำดับในหน้านี้เรียงตามมูลค่าออเดอร์เป็นหลัก และถ่วงด้วยจำนวนวันที่ค้าง เพื่อไม่ให้รายเล็กค้างอยู่ตลอดกาล — เป็นเครื่องมือจัดลำดับ ไม่ใช่คะแนนความเสี่ยงและไม่ใช่คำแนะนำให้ปลด',
+  },
+  orderCauses: {
+    limit_exceeded: 'เกินวงเงิน',
+    no_limit_set: 'ยังไม่ได้ตั้งวงเงิน',
+    limit_expired: 'วงเงินหมดอายุ',
+    overdue_balance: 'มียอดค้างเกินกำหนด',
+    collateral_expired: 'หลักประกันหมดอายุแต่ยังอยู่ในทะเบียน',
+    collateral_shortfall: 'หลักประกันไม่พอคุ้มครองยอดใหม่',
+    worst_risk_grade: 'อยู่ในเกรดต่ำสุดขององค์กร',
+    group_limit_pressure: 'ยอดรวมทั้งกลุ่มเกินวงเงินสูงสุดรายเดียวในกลุ่ม',
+    not_visible: 'ข้อมูลใน CreditMesh ไม่มีอะไรอธิบายการระงับนี้',
+  },
+  orderRemedies: {
+    collect_overdue: 'เก็บยอดค้างให้ได้',
+    raise_limit: 'ขอเพิ่มวงเงิน',
+    add_collateral: 'ขอหลักประกันเพิ่ม',
+    partial_release: 'ปล่อยเท่าที่วงเงินเหลือ',
+    prepayment: 'ขอชำระล่วงหน้า',
+    renew_limit: 'ต่ออายุวงเงิน',
+    credit_review: 'ทบทวนเครดิต',
+    ask_source_system: 'ตรวจกติกาที่ระบบต้นทาง',
+  },
+  orderDetail: {
+    creditLimit: 'วงเงิน',
+    exposure: 'Exposure',
+    orderAmount: 'มูลค่าออเดอร์',
+    shortfall: 'ส่วนที่เกิน',
+    arOverdue: 'ยอดค้างเกินกำหนด',
+    maxOpenDpd: 'ค้างนานสุด (วัน)',
+    limitValidTo: 'วงเงินถึงวันที่',
+    expiredFaceValue: 'มูลค่าที่หมดอายุ',
+    available: 'หลักประกันที่ยังไม่จัดสรร',
+    uncoveredNow: 'ไม่มีหลักประกันตอนนี้',
+    uncoveredAfterRelease: 'ไม่มีหลักประกันหลังปล่อย',
+    groupExposureAfter: 'Exposure กลุ่มหลังปล่อย',
+    maxSingleLimit: 'วงเงินสูงสุดรายเดียวในกลุ่ม',
+    grade: 'เกรด',
+    score: 'คะแนน',
+    blockCode: 'รหัสการระงับ',
+    blockReason: 'เหตุผลจากต้นทาง',
   },
   collateral: {
     title: 'ทะเบียนหลักประกันและการจัดสรร',
@@ -406,10 +525,101 @@ const en: Dictionary = {
     portfolio: 'Portfolio',
     groups: 'Groups',
     suppliers: 'Suppliers',
+    orders: 'Held orders',
     collateral: 'Collateral',
     simulator: 'Term simulator',
     import: 'Import',
     admin: 'Tenant profile',
+  },
+  navSection: {
+    understand: 'Understand',
+    protect: 'Protect',
+    decide: 'Decide',
+    operate: 'Operate',
+    setup: 'Setup',
+  },
+  orders: {
+    title: 'Held orders',
+    subtitle: 'Why it is stuck, what would clear it, and what becomes true if it goes out',
+    readOnlyNote:
+      'The platform does not release orders. The source system blocked it and the source system releases it. What happens here is that the decision, its reason, and the numbers on screen at the time are written down.',
+    noData: 'No held orders',
+    noDataHint: 'Upload the "Held sales orders" dataset on the import screen',
+    blockedCount: 'Orders held',
+    blockedValue: 'Value held',
+    clearableByCollection: 'Clears if collected',
+    aged: 'Over threshold / oldest',
+    unexplained: 'Not explained by our data',
+    unexplainedNote:
+      'Some orders are held for a reason nothing in CreditMesh accounts for. That is usually a rule living only in the ERP, or a dataset not yet imported — check the source system rather than guessing.',
+    daysShort: 'd',
+    blockedOn: 'held since',
+    sourceSays: 'Source system says',
+    orderValue: 'Order value',
+    why: 'Why it is held',
+    remedies: 'What would clear it',
+    impact: 'If it goes out',
+    exposureAfter: 'Exposure',
+    headroomAfter: 'Headroom',
+    utilizationAfter: 'Utilisation',
+    uncoveredAfter: 'Uncovered',
+    groupExposureAfter: 'Group exposure',
+    noLimit: 'no limit',
+    lastDecision: 'Last decision',
+    noDecisionYet: 'No decision recorded yet',
+    decide: 'Record a decision',
+    reason: 'Reason (required)',
+    reasonPlaceholder: 'e.g. customer transferred, clearing tomorrow · BG covers the excess',
+    reasonRequired: 'A reason is required',
+    saving: 'Saving…',
+    saved: 'Saved',
+    outcomeRecommendRelease: 'Recommend release',
+    outcomeHold: 'Keep on hold',
+    outcomePartial: 'Partial release',
+    outcomeEscalate: 'Escalate',
+    outcomeReject: 'Reject',
+    priorityNote:
+      'The queue is ordered by order value, weighted by how long the order has been held so small ones do not sit forever. It is an ordering device — not a risk score, and not a recommendation to release.',
+  },
+  orderCauses: {
+    limit_exceeded: 'Over the credit limit',
+    no_limit_set: 'No credit limit set',
+    limit_expired: 'Credit limit has expired',
+    overdue_balance: 'Balance past due',
+    collateral_expired: 'Collateral expired but still on the books',
+    collateral_shortfall: 'Collateral does not cover the new balance',
+    worst_risk_grade: 'On the lowest grade the organisation uses',
+    group_limit_pressure: 'Group exposure would exceed the largest single limit in the group',
+    not_visible: 'Nothing in CreditMesh data accounts for this block',
+  },
+  orderRemedies: {
+    collect_overdue: 'Collect the overdue balance',
+    raise_limit: 'Raise the limit',
+    add_collateral: 'Ask for more collateral',
+    partial_release: 'Release what fits the headroom',
+    prepayment: 'Ask for prepayment',
+    renew_limit: 'Renew the limit',
+    credit_review: 'Run a credit review',
+    ask_source_system: 'Check the rule in the source system',
+  },
+  orderDetail: {
+    creditLimit: 'Credit limit',
+    exposure: 'Exposure',
+    orderAmount: 'Order amount',
+    shortfall: 'Shortfall',
+    arOverdue: 'Overdue',
+    maxOpenDpd: 'Oldest open (days)',
+    limitValidTo: 'Limit valid to',
+    expiredFaceValue: 'Expired face value',
+    available: 'Unallocated collateral',
+    uncoveredNow: 'Uncovered now',
+    uncoveredAfterRelease: 'Uncovered after release',
+    groupExposureAfter: 'Group exposure after',
+    maxSingleLimit: 'Largest single limit in group',
+    grade: 'Grade',
+    score: 'Score',
+    blockCode: 'Block code',
+    blockReason: 'Source reason',
   },
   collateral: {
     title: 'Collateral & allocation ledger',

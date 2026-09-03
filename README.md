@@ -24,6 +24,13 @@ what exists in the repository and how to run it.
   request-and-approve workflow is deliberately not here — §7 says put the
   numbers everyone already uses on one screen first, and change nobody's
   process until every entity agrees what they are.
+- **R3 — Order Block Cockpit.** Module 11: every held order on one screen with
+  why it is stuck, what would clear it, and what becomes true if it goes out —
+  plus a recorded decision with a required reason. It releases nothing. The ERP
+  holds the order and the ERP releases it (P5); what this adds is that the
+  release which happens in SAP an hour later has a written reason and a named
+  person attached to it here. Where our data does not account for a block, the
+  card says so rather than offering the nearest plausible reason.
 
 ---
 
@@ -103,16 +110,20 @@ if you want to understand who can see what.
    | 8 | `supplier_commitment.csv` | Supplier commitments |
    | 9 | `collateral.csv` | Collateral register |
    | 10 | `collateral_allocation.csv` | Collateral allocation |
+   | 11 | `order_block.csv` | Held sales orders |
 
 5. Portfolio → **Re-run analysis** to compute exposure, payment behaviour and
    risk assessments.
 6. Groups → **Re-run group resolution**. The sample data contains two groups
    nobody would spot from a customer list: three counterparties under one
    shareholder, and two more sharing a director.
-7. Suppliers and Collateral read from what was imported and need no run step.
+7. Suppliers, Collateral and Held orders read from what was imported and need
+   no run step.
    The sample data has a sole-sourced supplier with no financials on file, a
    guarantee allocated beyond its face value, a cash deposit allocated and never
-   drawn, and one guarantee split across two legal entities.
+   drawn, and one guarantee split across two legal entities. Among the held
+   orders is one that nothing in our data explains — the cockpit says exactly
+   that instead of inventing a cause.
 
 Every import runs in validate-first mode; nothing is written until you have seen
 the row counts and the rejected rows.
@@ -132,6 +143,7 @@ npm run build                  # production build
 npm test                       # engine tests
 npm run typecheck              # project references typecheck
 npm run lint:no-tenant-names   # P1 / P2 check
+npm run db:apply-all           # regenerate supabase/apply-all.sql
 ```
 
 ## What is deliberately not here yet

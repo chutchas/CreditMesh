@@ -9,5 +9,6 @@ export * from './engines/supplier-watch';
 export * from './engines/term-simulator';
 export * from './engines/aging';
 export * from './engines/collateral';
+export * from './engines/order-block';
 export * from './enrichment/provider';
 export * from './enrichment/gateway';

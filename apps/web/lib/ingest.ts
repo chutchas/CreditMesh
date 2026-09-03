@@ -707,3 +707,58 @@ export async function applyCollateralAllocationRows(ctx: ApplyContext, rows: Imp
 
   return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
 }
+
+/* ------------------------------------------------------------------ */
+/* Held sales orders — Module 11                                        */
+/* ------------------------------------------------------------------ */
+
+export async function applyOrderBlockRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  baseCurrency: string,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+  const payload: Record<string, unknown>[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    const key = `${ctx.systemId}|${String(r.legalEntityCode)}|${String(r.partySourceCode)}`;
+    const partyId = index.bySourceCode.get(key);
+    if (!partyId) {
+      skipped += 1;
+      continue;
+    }
+    const blockedAt = String(r.blockedAt);
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      legal_entity_code: String(r.legalEntityCode),
+      order_ref: String(r.orderRef),
+      order_date: r.orderDate,
+      order_amount: r.orderAmount,
+      currency: String(r.currency ?? baseCurrency),
+      block_code: r.blockCode,
+      block_reason: r.blockReason,
+      // A date-only value from a CSV is midnight local; storing it as a
+      // timestamptz keeps the days-blocked count honest either way.
+      blocked_at: blockedAt.length === 10 ? `${blockedAt}T00:00:00Z` : blockedAt,
+      status: r.status ?? 'blocked',
+      source_ref: `import:${ctx.systemId}:${r.__rowNumber}`,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  if (skipped > 0) {
+    log.note(`${skipped} row(s) reference a customer code not in the register — import the counterparty register first`);
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('sales_order_block')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,legal_entity_code,order_ref' });
+    log.check('writing held sales orders', error);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}

@@ -21,15 +21,39 @@ export default async function LocaleLayout({
   const t = getDictionary(locale);
   const session = await getSession();
 
-  const nav: { href: string; label: string }[] = [
-    { href: `/${locale}`, label: t.nav.dashboard },
-    { href: `/${locale}/portfolio`, label: t.nav.portfolio },
-    { href: `/${locale}/groups`, label: t.nav.groups },
-    { href: `/${locale}/suppliers`, label: t.nav.suppliers },
-    { href: `/${locale}/collateral`, label: t.nav.collateral },
-    { href: `/${locale}/simulator`, label: t.nav.simulator },
-    { href: `/${locale}/import`, label: t.nav.import },
-    { href: `/${locale}/admin`, label: t.nav.admin },
+  // Grouped by the six solution groups the spec and the customer deck share
+  // (§7). A flat list of eighteen links is how a product stops being navigable
+  // — the section headings are the same words the buyer heard in the pitch.
+  const nav: { section: string; items: { href: string; label: string }[] }[] = [
+    {
+      section: t.navSection.understand,
+      items: [
+        { href: `/${locale}`, label: t.nav.dashboard },
+        { href: `/${locale}/portfolio`, label: t.nav.portfolio },
+        { href: `/${locale}/groups`, label: t.nav.groups },
+      ],
+    },
+    {
+      section: t.navSection.protect,
+      items: [
+        { href: `/${locale}/collateral`, label: t.nav.collateral },
+        { href: `/${locale}/suppliers`, label: t.nav.suppliers },
+      ],
+    },
+    {
+      section: t.navSection.decide,
+      items: [
+        { href: `/${locale}/orders`, label: t.nav.orders },
+        { href: `/${locale}/simulator`, label: t.nav.simulator },
+      ],
+    },
+    {
+      section: t.navSection.setup,
+      items: [
+        { href: `/${locale}/import`, label: t.nav.import },
+        { href: `/${locale}/admin`, label: t.nav.admin },
+      ],
+    },
   ];
 
   const other: Locale = locale === 'th' ? 'en' : 'th';
@@ -45,15 +69,24 @@ export default async function LocaleLayout({
               </div>
               <div className="mt-0.5 text-[11px] leading-4 text-[var(--color-muted)]">{t.common.tagline}</div>
             </Link>
-            <nav className="mt-6 space-y-0.5">
-              {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded px-2 py-1.5 text-sm text-[var(--color-ink)] hover:bg-[var(--color-canvas)]"
-                >
-                  {item.label}
-                </Link>
+            <nav className="mt-6 space-y-4">
+              {nav.map((group) => (
+                <div key={group.section}>
+                  <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                    {group.section}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="block rounded px-2 py-1.5 text-sm text-[var(--color-ink)] hover:bg-[var(--color-canvas)]"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
           </aside>

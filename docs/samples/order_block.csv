@@ -1,0 +1,7 @@
+entity,customer_code,order_ref,order_date,order_amount,currency,block_code,block_reason,blocked_at,status
+E01,C-1001,SO-2026-1188,25/08/2026,"2,000,000",THB,Z1,Credit limit check failed,26/08/2026,blocked
+E02,K-4490,SO-2026-1204,28/08/2026,"800,000",THB,Z1,Overdue items exist,28/08/2026,blocked
+E01,C-1002,SO-2026-1219,31/08/2026,"300,000",THB,Z2,Manual credit review required,31/08/2026,blocked
+E01,C-1004,SO-2026-1231,01/09/2026,"500,000",THB,Z9,Blocked by user,01/09/2026,blocked
+E02,K-4512,SO-2026-1240,02/09/2026,"600,000",THB,Z1,Credit limit check failed,02/09/2026,blocked
+E01,C-1003,SO-2026-1102,10/08/2026,"1,400,000",THB,Z1,Credit limit check failed,11/08/2026,blocked
