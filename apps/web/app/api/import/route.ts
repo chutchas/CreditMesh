@@ -104,20 +104,25 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   await admin
     .from('import_batch')
-    .update({ status: 'applied', finished_at: now, warnings: [...result.report.warnings, ...apply.notes] })
+    .update({
+      status: apply.failed ? 'failed' : 'applied',
+      finished_at: now,
+      warnings: [...result.report.warnings, ...apply.notes],
+    })
     .eq('id', batch?.id ?? '');
 
   // Freshness is recorded per dataset so every screen can say how old its
-  // inputs are, and warn when they are older than the threshold.
+  // inputs are, and warn when they are older than the threshold. A failed run
+  // records the failure instead: §5.2 says an adapter that could not refresh
+  // must be visible, not quietly leave yesterday's timestamp in place.
   await admin.from('dataset_freshness').upsert(
     {
       tenant_id: session.tenantId,
       system_id: 'csv',
       dataset_id: datasetId,
-      last_success_at: now,
+      ...(apply.failed ? {} : { last_success_at: now, data_as_of: dataAsOf }),
       last_attempt_at: now,
-      data_as_of: dataAsOf,
-      last_error: null,
+      last_error: apply.failed ? apply.notes.join(' · ').slice(0, 2000) : null,
     },
     { onConflict: 'tenant_id,system_id,dataset_id' },
   );
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
     tenant_id: session.tenantId,
     actor: session.userId,
     actor_label: session.email,
-    action: 'import.apply',
+    action: apply.failed ? 'import.failed' : 'import.apply',
     object_type: 'import_batch',
     object_id: batch?.id ?? datasetId,
     snapshot: {
@@ -139,6 +144,14 @@ export async function POST(request: Request) {
       ...apply,
     },
   });
+
+  if (apply.failed) {
+    // A write that failed must never be reported as an import that worked.
+    return NextResponse.json(
+      { report: result.report, applied: false, ...apply, error: apply.notes.join(' · ') },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ report: result.report, applied: true, ...apply });
 }

@@ -217,8 +217,8 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
               {(identifiers ?? []).map((idf, i) => (
                 <tr key={i} className="border-b border-[var(--color-line)] last:border-0">
                   <td className="py-2 pr-3">{idf.kind}</td>
-                  <td className="py-2 pr-3">{idf.system_id ?? '—'}</td>
-                  <td className="py-2 pr-3">{idf.legal_entity_code ?? '—'}</td>
+                  <td className="py-2 pr-3">{idf.system_id || '—'}</td>
+                  <td className="py-2 pr-3">{idf.legal_entity_code || '—'}</td>
                   <td className="tabular py-2">{idf.value}</td>
                 </tr>
               ))}
