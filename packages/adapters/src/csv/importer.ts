@@ -1,7 +1,7 @@
 import type { AdapterResult, AdapterRowError, AdapterRunReport } from '../contract';
 import { applyTransform, coerceDate, coerceNumber } from './coerce';
 import type { ColumnSpec, DatasetSpec } from './datasets';
-import { getDataset } from './datasets';
+import { DATASETS, getDataset } from './datasets';
 import { parseCsv } from './parse';
 
 /**
@@ -43,6 +43,31 @@ export interface AutoMapResult {
 }
 
 const norm = (h: string) => h.toLowerCase().replace(/[\s_\-.]/g, '');
+
+export interface DatasetSuggestion {
+  datasetId: string;
+  /** How many of the file's columns this dataset recognises. */
+  matchedColumns: number;
+}
+
+/**
+ * Datasets whose required columns are all present in these headers, best fit
+ * first. Used to turn "no column maps to personName" — which tells the user
+ * nothing they can act on — into "this file looks like the shareholder
+ * register".
+ */
+export function suggestDatasets(headers: string[]): DatasetSuggestion[] {
+  return DATASETS.map((spec) => {
+    const auto = autoMapHeaders(spec, headers);
+    const mapped = new Set(auto.mappings.map((m) => m.canonicalField));
+    const required = spec.columns.filter((c) => c.required);
+    const allRequiredPresent = required.length > 0 && required.every((c) => mapped.has(c.canonicalField));
+    return { datasetId: spec.datasetId, matchedColumns: auto.mappings.length, allRequiredPresent };
+  })
+    .filter((s) => s.allRequiredPresent)
+    .sort((a, b) => b.matchedColumns - a.matchedColumns)
+    .map(({ datasetId, matchedColumns }) => ({ datasetId, matchedColumns }));
+}
 
 /** Header guessing so a first upload usually needs no configuration at all. */
 export function autoMapHeaders(spec: DatasetSpec, headers: string[]): AutoMapResult {
@@ -147,6 +172,7 @@ export function importCsv(csvText: string, options: ImportOptions): AdapterResul
 
   const stillMissing = spec.columns.filter((c) => c.required && !mappingByField.has(c.canonicalField));
   if (stillMissing.length > 0) {
+    const better = suggestDatasets(parsed.headers).find((s) => s.datasetId !== spec.datasetId);
     return {
       rows: [],
       report: {
@@ -159,6 +185,7 @@ export function importCsv(csvText: string, options: ImportOptions): AdapterResul
         rowsRejected: parsed.rows.length,
         dataAsOf: options.dataAsOf ?? null,
         watermark: null,
+        suggestedDatasetId: better?.datasetId ?? null,
         errors: stillMissing.map((c) => ({
           rowNumber: 1,
           column: c.canonicalField,

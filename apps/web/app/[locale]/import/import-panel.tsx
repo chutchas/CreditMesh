@@ -16,6 +16,7 @@ interface Report {
   rowsRejected: number;
   errors: { rowNumber: number; column: string | null; code: string; message: string }[];
   warnings: string[];
+  suggestedDatasetId?: string | null;
 }
 
 export default function ImportPanel({
@@ -40,6 +41,10 @@ export default function ImportPanel({
 
   const dataset = datasets.find((d) => d.id === datasetId);
   const validated = report !== null && report.rowsAccepted > 0;
+  const suggested = report?.suggestedDatasetId
+    ? datasets.find((d) => d.id === report.suggestedDatasetId)
+    : undefined;
+  const suggestion = suggested && suggested.id !== datasetId ? suggested : undefined;
 
   function chooseFile(next: File | null) {
     setFile(next);
@@ -48,14 +53,14 @@ export default function ImportPanel({
     setError(null);
   }
 
-  async function send(dryRun: boolean) {
+  async function send(dryRun: boolean, datasetOverride?: string) {
     if (!file) return;
     setBusy(true);
     setError(null);
     if (dryRun) setApplied(null);
     const form = new FormData();
     form.set('file', file);
-    form.set('datasetId', datasetId);
+    form.set('datasetId', datasetOverride ?? datasetId);
     form.set('dryRun', String(dryRun));
     form.set('dataAsOf', dataAsOf);
 
@@ -201,6 +206,26 @@ export default function ImportPanel({
           <p className="mt-2 text-center text-xs text-[var(--color-muted)]">{labels.hintNeedFile}</p>
         ) : !validated ? (
           <p className="mt-2 text-center text-xs text-[var(--color-muted)]">{labels.hintNeedValidate}</p>
+        ) : null}
+
+        {suggestion ? (
+          <div className="mt-3 rounded border border-[#fbe3a4] bg-[#fffaeb] p-3 text-xs text-[#b54708]">
+            <p>
+              {labels.wrongDataset}: <strong>{suggestion.label}</strong>
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setDatasetId(suggestion.id);
+                setApplied(null);
+                void send(true, suggestion.id);
+              }}
+              className="mt-2 rounded border border-[#b54708] px-2 py-1 text-[11px] font-medium disabled:opacity-50"
+            >
+              {labels.switchDataset}
+            </button>
+          </div>
         ) : null}
 
         {dataset ? (

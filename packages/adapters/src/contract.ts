@@ -42,6 +42,13 @@ export interface AdapterRunReport {
   rowsRejected: number;
   /** As-of date of the data itself, which is not the time of the upload. */
   dataAsOf: string | null;
+  /**
+   * When the chosen dataset does not fit the file but another one does. The
+   * dataset selector holds its previous value while the file picker moves on,
+   * so picking the right file against the wrong dataset is the easiest mistake
+   * on the screen — and the headers already say which one was meant.
+   */
+  suggestedDatasetId?: string | null;
   watermark: string | null;
   errors: AdapterRowError[];
   warnings: string[];

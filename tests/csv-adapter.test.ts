@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { autoMapHeaders, coerceDate, coerceNumber, getDataset, importCsv, parseCsv } from '@creditmesh/adapters';
+import {
+  autoMapHeaders,
+  coerceDate,
+  coerceNumber,
+  getDataset,
+  importCsv,
+  parseCsv,
+  suggestDatasets,
+} from '@creditmesh/adapters';
 
 describe('parseCsv', () => {
   it('handles quoted delimiters, embedded newlines and doubled quotes', () => {
@@ -122,5 +130,41 @@ describe('importCsv', () => {
     expect(result.rows[0]!.amount).toBe(1500);
     expect(result.rows[0]!.amountBase).toBe(1500);
     expect(result.rows[0]!.currency).toBe('THB');
+  });
+});
+
+describe('suggestDatasets', () => {
+  it('recognises a shareholder register from its headers alone', () => {
+    const suggestions = suggestDatasets(['tax_id', 'holder_name', 'holder_type', 'holder_tax_id', 'share_pct']);
+    expect(suggestions[0]!.datasetId).toBe('shareholder');
+  });
+
+  it('tells a director list from a shareholder list', () => {
+    const suggestions = suggestDatasets(['tax_id', 'name', 'position', 'appointed_date']);
+    expect(suggestions[0]!.datasetId).toBe('director');
+  });
+
+  it('suggests nothing when no dataset fits', () => {
+    expect(suggestDatasets(['colour', 'size', 'weight'])).toEqual([]);
+  });
+});
+
+describe('importCsv dataset mismatch', () => {
+  it('names the dataset the file actually is instead of leaving a dead end', () => {
+    // The real mistake this catches: the dataset selector keeps its previous
+    // value while the file picker moves on, so the right file gets validated
+    // against the wrong dataset and the only feedback is a missing column.
+    const csv = 'tax_id,holder_name,holder_type,holder_tax_id,share_pct\n0105536000020,Owner One,person,,52\n';
+    const result = importCsv(csv, { datasetId: 'director', systemId: 'csv' });
+
+    expect(result.rows).toHaveLength(0);
+    expect(result.report.errors[0]!.code).toBe('missing_required');
+    expect(result.report.suggestedDatasetId).toBe('shareholder');
+  });
+
+  it('suggests nothing when the chosen dataset is the right one', () => {
+    const csv = 'entity,customer_code,customer_name\nE01,C-1,Acme\n';
+    const result = importCsv(csv, { datasetId: 'party', systemId: 'csv' });
+    expect(result.report.suggestedDatasetId ?? null).toBeNull();
   });
 });

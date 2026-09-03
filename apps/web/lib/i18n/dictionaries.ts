@@ -61,7 +61,7 @@ export interface Dictionary {
   importer: Record<
     'title' | 'subtitle' | 'dataset' | 'chooseFile' | 'preview' | 'rowsRead' | 'rowsAccepted'
     | 'rowsRejected' | 'apply' | 'applied' | 'errors' | 'warnings' | 'row' | 'column' | 'message'
-    | 'mappedColumns' | 'unmapped' | 'dataAsOf' | 'history'
+    | 'mappedColumns' | 'unmapped' | 'dataAsOf' | 'history' | 'wrongDataset' | 'switchDataset'
     | 'browse' | 'changeFile' | 'dropHint' | 'noFile' | 'hintNeedFile' | 'hintNeedValidate'
     | 'stepFile' | 'stepValidate' | 'stepApply',
     string
@@ -251,6 +251,8 @@ const th: Dictionary = {
     noFile: 'ยังไม่ได้เลือกไฟล์',
     hintNeedFile: 'เลือกไฟล์ก่อน แล้วปุ่มจะกดได้',
     hintNeedValidate: 'ต้องตรวจให้ผ่านก่อน จึงจะนำเข้าจริงได้',
+    wrongDataset: 'หัวคอลัมน์ในไฟล์นี้ตรงกับชุดข้อมูลอื่น',
+    switchDataset: 'สลับไปชุดข้อมูลนั้นแล้วตรวจใหม่',
     stepFile: '1 · เลือกไฟล์',
     stepValidate: '2 · ตรวจ',
     stepApply: '3 · นำเข้า',
@@ -449,6 +451,8 @@ const en: Dictionary = {
     noFile: 'No file chosen yet',
     hintNeedFile: 'Choose a file to enable these',
     hintNeedValidate: 'Validation has to pass before anything is written',
+    wrongDataset: 'The columns in this file match a different dataset',
+    switchDataset: 'Switch to it and validate again',
     stepFile: '1 · File',
     stepValidate: '2 · Validate',
     stepApply: '3 · Import',
