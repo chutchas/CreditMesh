@@ -195,6 +195,43 @@ export const DATASETS: DatasetSpec[] = [
       { canonicalField: 'currency', type: 'string', required: false, aliases: ['currency', 'curr', 'สกุลเงิน'], description: 'Currency' },
     ],
   },
+  {
+    datasetId: 'collateral',
+    entity: 'collateral',
+    labelTh: 'ทะเบียนหลักประกัน',
+    labelEn: 'Collateral register',
+    naturalKey: ['reference'],
+    columns: [
+      { canonicalField: 'legalEntityCode', type: 'string', required: true, aliases: ['legal_entity', 'entity', 'company_code', 'นิติบุคคล'], description: 'Legal entity whose register this row came from — used to find the counterparty' },
+      { canonicalField: 'partySourceCode', type: 'string', required: true, aliases: ['source_code', 'customer_code', 'customer_no', 'supplier_code', 'รหัสลูกค้า', 'รหัสคู่ค้า'], description: 'Counterparty code in the source system' },
+      { canonicalField: 'reference', type: 'string', required: true, aliases: ['reference', 'bg_no', 'lc_no', 'instrument_no', 'document_no', 'เลขที่หนังสือ', 'เลขที่'], description: 'Instrument number' },
+      { canonicalField: 'type', type: 'enum', required: true, enumValues: ['bank_guarantee', 'letter_of_credit', 'cash_deposit', 'parent_guarantee', 'performance_bond', 'insurance', 'other'], aliases: ['type', 'collateral_type', 'instrument_type', 'ประเภท'], description: 'Instrument type' },
+      { canonicalField: 'direction', type: 'enum', required: false, enumValues: ['inbound', 'outbound'], aliases: ['direction', 'ทิศทาง'], description: 'inbound = they posted it to us (default); outbound = we posted it to them' },
+      { canonicalField: 'issuer', type: 'string', required: false, aliases: ['issuer', 'bank', 'issuing_bank', 'ผู้ออก', 'ธนาคารผู้ออก'], description: 'Who issued it' },
+      { canonicalField: 'amount', type: 'number', required: true, aliases: ['amount', 'value', 'face_value', 'มูลค่า', 'จำนวนเงิน'], description: 'Face value' },
+      { canonicalField: 'currency', type: 'string', required: false, aliases: ['currency', 'curr', 'สกุลเงิน'], description: 'Currency' },
+      { canonicalField: 'effectiveDate', type: 'date', required: true, aliases: ['effective_date', 'issue_date', 'start_date', 'วันมีผล', 'วันที่ออก'], description: 'Effective from' },
+      { canonicalField: 'expiryDate', type: 'date', required: false, aliases: ['expiry_date', 'expiry', 'end_date', 'valid_to', 'วันหมดอายุ'], description: 'Expires on' },
+      { canonicalField: 'claimDeadline', type: 'date', required: false, aliases: ['claim_deadline', 'claim_by', 'วันสุดท้ายที่เรียกร้องได้', 'กำหนดเรียกร้อง'], description: 'Last day a claim can be made — often later than expiry' },
+      { canonicalField: 'physicalLocation', type: 'string', required: false, aliases: ['physical_location', 'location', 'custody', 'ที่เก็บตัวจริง'], description: 'Where the original is held' },
+      { canonicalField: 'status', type: 'enum', required: false, enumValues: ['draft', 'active', 'expired', 'released', 'claimed'], aliases: ['status', 'สถานะ'], description: 'Status (defaults to active)' },
+    ],
+  },
+  {
+    datasetId: 'collateral_allocation',
+    entity: 'collateral',
+    labelTh: 'การจัดสรรหลักประกัน',
+    labelEn: 'Collateral allocation',
+    naturalKey: ['reference', 'legalEntityCode', 'validFrom'],
+    columns: [
+      { canonicalField: 'reference', type: 'string', required: true, aliases: ['reference', 'bg_no', 'lc_no', 'instrument_no', 'เลขที่หนังสือ', 'เลขที่'], description: 'Instrument number this allocation belongs to' },
+      { canonicalField: 'legalEntityCode', type: 'string', required: true, aliases: ['legal_entity', 'entity', 'company_code', 'นิติบุคคล'], description: 'Legal entity the value is allocated to' },
+      { canonicalField: 'allocated', type: 'number', required: true, aliases: ['allocated', 'allocated_amount', 'amount', 'ยอดจัดสรร'], description: 'Value allocated to this entity' },
+      { canonicalField: 'utilized', type: 'number', required: false, aliases: ['utilized', 'used', 'drawn', 'ยอดที่ใช้'], description: 'How much of the allocation is actually drawn against' },
+      { canonicalField: 'validFrom', type: 'date', required: false, aliases: ['valid_from', 'from_date', 'วันที่เริ่ม'], description: 'Allocation valid from' },
+      { canonicalField: 'validTo', type: 'date', required: false, aliases: ['valid_to', 'to_date', 'วันที่สิ้นสุด'], description: 'Allocation valid to' },
+    ],
+  },
 ];
 
 export function getDataset(datasetId: string): DatasetSpec | undefined {

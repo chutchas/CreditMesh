@@ -8,5 +8,6 @@ export * from './engines/risk-scoring';
 export * from './engines/supplier-watch';
 export * from './engines/term-simulator';
 export * from './engines/aging';
+export * from './engines/collateral';
 export * from './enrichment/provider';
 export * from './enrichment/gateway';

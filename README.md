@@ -12,10 +12,18 @@ what exists in the repository and how to run it.
   to any source system, which is the point: an organisation sees a result from a
   single file upload before anyone opens an IT ticket. The Tenant Profile is
   fully editable, which is what §9 makes the release gate.
-- **R2 — Group Intelligence (in progress).** Module 2 (Hidden Group Exposure)
-  and the Enrichment Gateway. Group resolution proposes corporate groups from
-  shared shareholders, directors and registered addresses, with a confidence
-  score, its evidence, and a human confirmation step that nothing bypasses.
+- **R2 — Group Intelligence.** Module 2 (Hidden Group Exposure), Module 9
+  (Supplier Financial Watch) and the Enrichment Gateway. Group resolution
+  proposes corporate groups from shared shareholders, directors and registered
+  addresses, with a confidence score, its evidence, and a human confirmation
+  step that nothing bypasses. The SAP adapter waits for a real system to
+  connect to.
+- **R3 — Collateral Ledger (first phase).** Module 3 as a read-only register:
+  balances, cross-entity allocation, over-allocation, expiry alerts on the
+  tenant's own bands, utilisation and uncovered exposure. The
+  request-and-approve workflow is deliberately not here — §7 says put the
+  numbers everyone already uses on one screen first, and change nobody's
+  process until every entity agrees what they are.
 
 ---
 
@@ -92,12 +100,19 @@ if you want to understand who can see what.
    | 5 | `registry_profile.csv` | Company registry profile |
    | 6 | `director.csv` | Directors |
    | 7 | `shareholder.csv` | Shareholders |
+   | 8 | `supplier_commitment.csv` | Supplier commitments |
+   | 9 | `collateral.csv` | Collateral register |
+   | 10 | `collateral_allocation.csv` | Collateral allocation |
 
 5. Portfolio → **Re-run analysis** to compute exposure, payment behaviour and
    risk assessments.
 6. Groups → **Re-run group resolution**. The sample data contains two groups
    nobody would spot from a customer list: three counterparties under one
    shareholder, and two more sharing a director.
+7. Suppliers and Collateral read from what was imported and need no run step.
+   The sample data has a sole-sourced supplier with no financials on file, a
+   guarantee allocated beyond its face value, a cash deposit allocated and never
+   drawn, and one guarantee split across two legal entities.
 
 Every import runs in validate-first mode; nothing is written until you have seen
 the row counts and the rejected rows.
@@ -121,11 +136,15 @@ npm run lint:no-tenant-names   # P1 / P2 check
 
 ## What is deliberately not here yet
 
-The collateral ledger workflow (Module 3) and the SAP adapter are R3 and are not
-stubbed. The database carries the tables and the neutral shapes they need —
-`collateral`, `collateral_allocation`, `collateral_event` — because §6 is
-explicit that retrofitting those shapes later means a rewrite, but no code reads
-them yet.
+The collateral request-and-approve workflow is the second phase of Module 3 and
+is not stubbed. §7 is specific about the sequence and the reason is not
+technical: the hard part is agreeing who has first claim on a guarantee, and a
+system that arrives with an answer to that gets rejected before anyone reads the
+numbers.
+
+The SAP adapter waits for a real system to connect to. Writing one against no
+system produces a fiction that has to be rewritten on contact with the first
+CDS view.
 
 The Enrichment Gateway ships with one provider, `manual_upload`: registry data
 arrives by spreadsheet. That is a deliberate first step rather than a stopgap —

@@ -26,6 +26,7 @@ export default async function LocaleLayout({
     { href: `/${locale}/portfolio`, label: t.nav.portfolio },
     { href: `/${locale}/groups`, label: t.nav.groups },
     { href: `/${locale}/suppliers`, label: t.nav.suppliers },
+    { href: `/${locale}/collateral`, label: t.nav.collateral },
     { href: `/${locale}/simulator`, label: t.nav.simulator },
     { href: `/${locale}/import`, label: t.nav.import },
     { href: `/${locale}/admin`, label: t.nav.admin },

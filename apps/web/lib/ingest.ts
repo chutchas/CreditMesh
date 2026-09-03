@@ -609,3 +609,101 @@ export async function applySupplierCommitmentRows(
 
   return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
 }
+
+/* ------------------------------------------------------------------ */
+/* Collateral register and allocations — Module 3, read-only phase      */
+/* ------------------------------------------------------------------ */
+
+export async function applyCollateralRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  baseCurrency: string,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+  const payload: Record<string, unknown>[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    const key = `${ctx.systemId}|${String(r.legalEntityCode)}|${String(r.partySourceCode)}`;
+    const partyId = index.bySourceCode.get(key);
+    if (!partyId) {
+      skipped += 1;
+      continue;
+    }
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      type: r.type,
+      direction: r.direction ?? 'inbound',
+      reference: String(r.reference),
+      issuer: r.issuer,
+      amount: r.amount,
+      currency: String(r.currency ?? baseCurrency),
+      effective_date: r.effectiveDate,
+      expiry_date: r.expiryDate,
+      claim_deadline: r.claimDeadline,
+      physical_location: r.physicalLocation,
+      status: r.status ?? 'active',
+    });
+  }
+
+  if (skipped > 0) {
+    log.note(`${skipped} row(s) reference a counterparty code not in the register — import the counterparty register first`);
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('collateral')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,reference' });
+    log.check('writing the collateral register', error);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}
+
+export async function applyCollateralAllocationRows(ctx: ApplyContext, rows: ImportedRow[]): Promise<ApplyResult> {
+  const log = new WriteLog();
+
+  const { data: instruments, error } = await ctx.admin
+    .from('collateral')
+    .select('id, reference')
+    .eq('tenant_id', ctx.tenantId);
+  log.check('reading the collateral register', error);
+
+  const idByReference = new Map((instruments ?? []).map((c) => [c.reference as string, c.id as string]));
+  const payload: Record<string, unknown>[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    const collateralId = idByReference.get(String(r.reference));
+    if (!collateralId) {
+      skipped += 1;
+      continue;
+    }
+    payload.push({
+      tenant_id: ctx.tenantId,
+      collateral_id: collateralId,
+      legal_entity_code: String(r.legalEntityCode),
+      allocated: r.allocated,
+      utilized: r.utilized ?? 0,
+      valid_from: r.validFrom ?? new Date().toISOString().slice(0, 10),
+      valid_to: r.validTo,
+    });
+  }
+
+  if (skipped > 0) {
+    log.note(`${skipped} allocation(s) reference an instrument not in the register — import the collateral register first`);
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    // Keyed on migration 0013's natural key, so a re-imported register updates
+    // the allocation instead of doubling what the instrument appears to cover.
+    const { error: writeError } = await ctx.admin
+      .from('collateral_allocation')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,collateral_id,legal_entity_code,valid_from' });
+    log.check('writing collateral allocations', writeError);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}

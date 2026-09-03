@@ -226,6 +226,13 @@ export function importCsv(csvText: string, options: ImportOptions): AdapterResul
     // conveniences, not business rules.
     if (spec.datasetId === 'party' && out.role === null) out.role = 'customer';
     if (spec.datasetId === 'shareholder' && out.holderType === null) out.holderType = 'person';
+    if (spec.datasetId === 'collateral') {
+      // Inbound is overwhelmingly the common case, and a register that
+      // does not state direction is a register of what was posted to us.
+      if (out.direction === null) out.direction = 'inbound';
+      if (out.status === null) out.status = 'active';
+    }
+    if (spec.datasetId === 'collateral_allocation' && out.utilized === null) out.utilized = 0;
     if ('currency' in out && (out.currency === null || out.currency === '') && options.defaultCurrency) {
       out.currency = options.defaultCurrency;
     }

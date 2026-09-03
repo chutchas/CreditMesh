@@ -4,6 +4,8 @@ import { createAdminClient } from '../../../lib/supabase/admin';
 import { canWrite, getSession } from '../../../lib/session';
 import {
   applyArItemRows,
+  applyCollateralAllocationRows,
+  applyCollateralRows,
   applyCreditLimitRows,
   applyDirectorRows,
   applyFinancialStatementRows,
@@ -112,6 +114,12 @@ export async function POST(request: Request) {
       break;
     case 'supplier_commitment':
       apply = await applySupplierCommitmentRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'collateral':
+      apply = await applyCollateralRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'collateral_allocation':
+      apply = await applyCollateralAllocationRows(ctx, result.rows);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

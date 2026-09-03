@@ -17,7 +17,20 @@ export interface Dictionary {
     | 'staleWarning' | 'never' | 'party' | 'entity' | 'currency' | 'back',
     string
   >;
-  nav: Record<'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'simulator' | 'import' | 'admin', string>;
+  nav: Record<
+    'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'simulator' | 'import' | 'admin',
+    string
+  >;
+  collateral: Record<
+    'title' | 'subtitle' | 'readOnlyNote' | 'register' | 'reference' | 'party' | 'type' | 'issuer'
+    | 'faceValue' | 'allocated' | 'utilized' | 'unallocated' | 'idle' | 'expiry' | 'claimDeadline'
+    | 'status' | 'utilization' | 'allocation' | 'uncoveredExposure' | 'coveredExposure'
+    | 'instruments' | 'held' | 'coverage' | 'expiring' | 'daysLeft' | 'overdueExpiry' | 'noData'
+    | 'noDataHint' | 'noAlerts' | 'entity' | 'exposure' | 'warnings' | 'overAllocated'
+    | 'claimWindowClosed' | 'expiredButActive' | 'idleAllocation' | 'unallocatedWarn'
+    | 'outboundExcluded' | 'coverageNote',
+    string
+  >;
   suppliers: Record<
     'title' | 'subtitle' | 'supplier' | 'fragility' | 'openCommitment' | 'annualSpend'
     | 'category' | 'share' | 'singleSource' | 'leadTime' | 'disruptionExposure'
@@ -109,9 +122,54 @@ const th: Dictionary = {
     portfolio: 'พอร์ตคู่สัญญา',
     groups: 'กลุ่มทุน',
     suppliers: 'ซัพพลายเออร์',
+    collateral: 'หลักประกัน',
     simulator: 'จำลองเทอมเครดิต',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
+  },
+  collateral: {
+    title: 'ทะเบียนหลักประกันและการจัดสรร',
+    subtitle: 'ยอดคงเหลือจริง การจัดสรรข้ามนิติบุคคล และ exposure ที่ไม่มีหลักประกันคุ้มครอง',
+    readOnlyNote:
+      'เฟสแรกเป็นทะเบียนอ่านอย่างเดียวโดยตั้งใจ — เอาตัวเลขที่ใช้อยู่มาแสดงให้ทุกฝ่ายเห็นตรงกันก่อน ยังไม่เปลี่ยนกระบวนการของใคร เวิร์กโฟลว์ขอ-คืน-อนุมัติสิทธิ์เป็นเฟสถัดไป',
+    register: 'ทะเบียนหลักประกัน',
+    reference: 'เลขที่',
+    party: 'คู่สัญญา',
+    type: 'ประเภท',
+    issuer: 'ผู้ออก',
+    faceValue: 'มูลค่าหน้าตั๋ว',
+    allocated: 'จัดสรรแล้ว',
+    utilized: 'ใช้จริง',
+    unallocated: 'ยังไม่จัดสรร',
+    idle: 'ถือไว้ไม่ได้ใช้',
+    expiry: 'หมดอายุ',
+    claimDeadline: 'กำหนดเรียกร้อง',
+    status: 'สถานะ',
+    utilization: 'อัตราการใช้ประโยชน์',
+    allocation: 'อัตราการจัดสรร',
+    uncoveredExposure: 'Exposure ที่ไม่มีหลักประกันคุ้มครอง',
+    coveredExposure: 'Exposure ที่มีหลักประกันคุ้มครอง',
+    instruments: 'จำนวนฉบับ',
+    held: 'มูลค่าที่ถืออยู่',
+    coverage: 'ความคุ้มครองรายคู่สัญญา',
+    expiring: 'ใกล้หมดอายุ',
+    daysLeft: 'เหลือ (วัน)',
+    overdueExpiry: 'หมดอายุแล้ว',
+    noData: 'ยังไม่มีทะเบียนหลักประกัน',
+    noDataHint: 'นำเข้าชุดข้อมูล "ทะเบียนหลักประกัน" แล้วตามด้วย "การจัดสรรหลักประกัน"',
+    noAlerts: 'ไม่มีฉบับใดใกล้หมดอายุตามเกณฑ์ที่ตั้งไว้',
+    entity: 'นิติบุคคล',
+    exposure: 'Exposure',
+    warnings: 'ข้อควรตรวจ',
+    overAllocated: 'จัดสรรเกินมูลค่า',
+    claimWindowClosed: 'พ้นกำหนดเรียกร้องแล้วแต่ยังสถานะใช้งาน',
+    expiredButActive: 'หมดอายุแล้วแต่ยังสถานะใช้งาน',
+    idleAllocation: 'จัดสรรไว้แต่แทบไม่ได้ใช้',
+    unallocatedWarn: 'ยังมีส่วนที่ไม่ได้จัดสรร',
+    outboundExcluded:
+      'หลักประกันที่เราวางให้คู่สัญญา (outbound) ไม่นับเป็นความคุ้มครอง เพราะเป็นภาระของเราเอง ไม่ใช่สิ่งที่ปกป้องเรา',
+    coverageNote:
+      'คำนวณรายคู่สัญญาต่อนิติบุคคล เพราะการจัดสรรเกิดที่ระดับนั้น — ถ้ารวมเป็นรายคู่สัญญา สิทธิ์ที่ไม่ได้ใช้ในนิติบุคคลหนึ่งจะดูเหมือนคุ้มครองยอดในอีกแห่ง ซึ่งเป็นความสับสนที่ทะเบียนนี้มีไว้เพื่อกำจัด',
   },
   suppliers: {
     title: 'Supplier Financial Watch',
@@ -347,9 +405,54 @@ const en: Dictionary = {
     portfolio: 'Portfolio',
     groups: 'Groups',
     suppliers: 'Suppliers',
+    collateral: 'Collateral',
     simulator: 'Term simulator',
     import: 'Import',
     admin: 'Tenant profile',
+  },
+  collateral: {
+    title: 'Collateral & allocation ledger',
+    subtitle: 'Real balances, allocation across entities, and the exposure nothing is standing behind',
+    readOnlyNote:
+      'A read-only register on purpose. Put the figures everyone already uses on one screen and change nobody’s process; the request-and-approve workflow comes once every entity agrees what the numbers are.',
+    register: 'Register',
+    reference: 'Reference',
+    party: 'Counterparty',
+    type: 'Type',
+    issuer: 'Issuer',
+    faceValue: 'Face value',
+    allocated: 'Allocated',
+    utilized: 'Drawn',
+    unallocated: 'Unallocated',
+    idle: 'Held and unused',
+    expiry: 'Expires',
+    claimDeadline: 'Claim by',
+    status: 'Status',
+    utilization: 'Utilisation',
+    allocation: 'Allocated share',
+    uncoveredExposure: 'Uncovered exposure',
+    coveredExposure: 'Covered exposure',
+    instruments: 'Instruments',
+    held: 'Value held',
+    coverage: 'Coverage by counterparty',
+    expiring: 'Expiring',
+    daysLeft: 'Days left',
+    overdueExpiry: 'Already expired',
+    noData: 'No collateral register yet',
+    noDataHint: 'Import the “Collateral register” dataset, then “Collateral allocation”',
+    noAlerts: 'Nothing falls inside the alert bands you configured',
+    entity: 'Entity',
+    exposure: 'Exposure',
+    warnings: 'Worth checking',
+    overAllocated: 'Allocated beyond face value',
+    claimWindowClosed: 'Claim window closed but still marked active',
+    expiredButActive: 'Expired but still marked active',
+    idleAllocation: 'Allocated and barely drawn',
+    unallocatedWarn: 'Part of it is allocated to nobody',
+    outboundExcluded:
+      'Collateral we posted to a counterparty (outbound) does not count as coverage — it is our own obligation, not our protection.',
+    coverageNote:
+      'Computed per counterparty per entity, because that is where an allocation is actually made. Collapsing to the counterparty would let an unused allocation in one entity appear to protect a balance in another — the exact confusion this ledger removes.',
   },
   suppliers: {
     title: 'Supplier financial watch',

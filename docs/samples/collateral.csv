@@ -1,0 +1,7 @@
+entity,customer_code,reference,type,direction,issuer,amount,currency,effective_date,expiry_date,claim_deadline,physical_location,status
+E01,C-1001,BG-2025-0114,bank_guarantee,inbound,ธนาคารกรุงเทพ,"4,000,000",THB,15/01/2025,14/01/2027,13/02/2027,ตู้นิรภัยสำนักงานใหญ่ ชั้น 12,active
+E02,K-4490,BG-2024-0908,bank_guarantee,inbound,ธนาคารกสิกรไทย,"6,000,000",THB,01/09/2024,30/09/2026,30/10/2026,ตู้นิรภัยสำนักงานใหญ่ ชั้น 12,active
+E01,C-1003,PG-2025-0031,parent_guarantee,inbound,Northgate Holdings Co Ltd,"2,500,000",THB,01/03/2025,28/02/2027,,ฝ่ายกฎหมาย,active
+E01,C-1002,BG-2024-0455,bank_guarantee,inbound,ธนาคารไทยพาณิชย์,"1,500,000",THB,10/06/2024,09/06/2026,09/07/2026,ตู้นิรภัยสำนักงานใหญ่ ชั้น 12,active
+E01,C-1004,CD-2025-0077,cash_deposit,inbound,,"800,000",THB,01/02/2025,,,บัญชีเงินฝากค้ำประกัน,active
+E01,V-2201,BG-2025-0210,bank_guarantee,outbound,ธนาคารกรุงเทพ,"2,000,000",THB,01/04/2025,31/03/2027,,ฝ่ายจัดซื้อ,active
