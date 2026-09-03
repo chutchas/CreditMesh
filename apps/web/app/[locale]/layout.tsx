@@ -28,9 +28,11 @@ export default async function LocaleLayout({
     {
       section: t.navSection.understand,
       items: [
+        { href: `/${locale}/cockpit`, label: t.nav.cockpit },
         { href: `/${locale}`, label: t.nav.dashboard },
         { href: `/${locale}/portfolio`, label: t.nav.portfolio },
         { href: `/${locale}/groups`, label: t.nav.groups },
+        { href: `/${locale}/risk-index`, label: t.nav.riskIndex },
       ],
     },
     {
@@ -39,12 +41,14 @@ export default async function LocaleLayout({
         { href: `/${locale}/collateral`, label: t.nav.collateral },
         { href: `/${locale}/suppliers`, label: t.nav.suppliers },
         { href: `/${locale}/legal`, label: t.nav.legal },
+        { href: `/${locale}/watchlist`, label: t.nav.watchlist },
       ],
     },
     {
       section: t.navSection.decide,
       items: [
         { href: `/${locale}/orders`, label: t.nav.orders },
+        { href: `/${locale}/memo`, label: t.nav.memo },
         { href: `/${locale}/simulator`, label: t.nav.simulator },
       ],
     },

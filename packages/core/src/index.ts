@@ -15,5 +15,8 @@ export * from './engines/payment-matching';
 export * from './engines/payment-exception';
 export * from './engines/collection';
 export * from './engines/late-charge';
+export * from './engines/watchlist';
+export * from './engines/risk-index';
+export * from './engines/credit-memo';
 export * from './enrichment/provider';
 export * from './enrichment/gateway';
