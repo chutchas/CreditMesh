@@ -39,13 +39,17 @@ export function createStarterProfile(tenantId: string, displayName: string): Ten
         { code: 'D', label: 'ความเสี่ยงสูง', minScore: 35, maxScore: 49.9, color: '#d1691a' },
         { code: 'E', label: 'ความเสี่ยงสูงมาก', minScore: 0, maxScore: 34.9, color: '#b42318' },
       ],
+      // Current arrears outweigh any single financial-statement measure: a
+      // balance sheet describes a year end that may be long past, an unpaid
+      // invoice describes today.
       scoringWeights: {
-        profitability: 0.2,
-        liquidity: 0.2,
-        leverage: 0.15,
-        equity_strength: 0.15,
+        profitability: 0.15,
+        liquidity: 0.15,
+        leverage: 0.1,
+        equity_strength: 0.1,
         filing_currency: 0.1,
-        payment_behavior: 0.2,
+        payment_behavior: 0.15,
+        delinquency: 0.25,
       },
       agingBuckets: [
         { code: 'not_due', label: 'ยังไม่ครบกำหนด', fromDays: -100000, toDays: 0 },

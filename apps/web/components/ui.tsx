@@ -63,6 +63,7 @@ export function GradeBadge({ grade, color }: { grade: string | null; color?: str
 }
 
 const FLAG_TONE: Record<string, string> = {
+  severely_delinquent: 'bg-[#b42318] font-semibold text-white',
   negative_equity: 'bg-[#fee4e2] text-[#b42318]',
   consecutive_losses: 'bg-[#fee4e2] text-[#b42318]',
   stale_filing: 'bg-[#fef0c7] text-[#b54708]',

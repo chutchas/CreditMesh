@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { ArItem, FinancialStatement } from '@creditmesh/core';
-import { analyseFinancials, buildAging, scoreParty, summarisePaymentBehavior } from '@creditmesh/core';
+import {
+  analyseFinancials,
+  buildAging,
+  scoreParty,
+  summariseDelinquency,
+  summarisePaymentBehavior,
+} from '@creditmesh/core';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { canWrite, getSession } from '../../../../lib/session';
 
@@ -132,6 +138,19 @@ export async function POST() {
   }
   const behaviourByParty = new Map(behaviours.map((b) => [b.party_id, b]));
 
+  const delinquencyByParty = new Map(
+    [...byParty.entries()].map(([partyId, group]) => [
+      partyId,
+      summariseDelinquency(group, asOf, profile.creditPolicy.dpdDefinition),
+    ]),
+  );
+
+  // The open-ended ageing bucket is this organisation's own definition of
+  // "seriously late", so the flag threshold comes from the profile, not a
+  // constant here.
+  const severeDpd =
+    profile.creditPolicy.agingBuckets.find((b) => b.toDays === null)?.fromDays ?? 90;
+
   // ---- risk assessment ----------------------------------------------------
   const { data: parties } = await admin
     .from('party')
@@ -171,9 +190,11 @@ export async function POST() {
   const assessments = (parties ?? []).map((p) => {
     const analysis = analyseFinancials(p.id, fsByParty.get(p.id) ?? [], { asOf });
     const raw = behaviourByParty.get(p.id);
+    const arrears = delinquencyByParty.get(p.id) ?? null;
     const score = scoreParty(profile, {
       analysis,
       asOf,
+      delinquency: arrears,
       paymentBehavior: raw
         ? {
             tenantId,
@@ -195,12 +216,27 @@ export async function POST() {
       grade: score.gradeCode ?? 'ungraded',
       components: score.components,
       evidence: score.evidence,
-      flags: analysis.flags.map((f) => ({
-        code: f.code,
-        severity: f.severity,
-        labelTh: f.labelTh,
-        labelEn: f.labelEn,
-      })),
+      flags: [
+        ...analysis.flags.map((f) => ({
+          code: f.code,
+          severity: f.severity,
+          labelTh: f.labelTh,
+          labelEn: f.labelEn,
+        })),
+        // Raised alongside the score rather than instead of it. A strong
+        // balance sheet can still pull the number up, so the arrears have to be
+        // visible on the row next to whatever grade came out.
+        ...(arrears && arrears.maxOpenDpd >= severeDpd
+          ? [
+              {
+                code: 'severely_delinquent',
+                severity: 'critical' as const,
+                labelTh: `ค้างชำระเกิน ${arrears.maxOpenDpd} วัน`,
+                labelEn: `${arrears.maxOpenDpd} days past due and unpaid`,
+              },
+            ]
+          : []),
+      ],
       profile_version: session.profileVersion,
     };
   });

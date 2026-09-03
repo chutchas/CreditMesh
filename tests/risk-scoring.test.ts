@@ -3,6 +3,7 @@ import {
   analyseFinancials,
   createStarterProfile,
   scoreParty,
+  type DelinquencySummary,
   type FinancialStatement,
   type PaymentBehavior,
 } from '@creditmesh/core';
@@ -106,5 +107,62 @@ describe('scoreParty', () => {
     });
     expect(result.components).toHaveLength(1);
     expect(result.missingComponents.length).toBeGreaterThan(0);
+  });
+});
+
+describe('scoreParty — arrears', () => {
+  const asOf = '2026-09-03';
+  const strongOldBooks = analyseFinancials('p', [fs(2022)], { asOf });
+
+  const arrears = (maxOpenDpd: number, overdueSharePct: number): DelinquencySummary => ({
+    maxOpenDpd,
+    openTotal: 6_000_000,
+    openOverdue: (6_000_000 * overdueSharePct) / 100,
+    overdueSharePct,
+    overdueItemCount: overdueSharePct > 0 ? 1 : 0,
+  });
+
+  /**
+   * The case that prompted this component. A counterparty whose only financial
+   * statement is four years old, whose whole balance is 147 days past due and
+   * unpaid, scored 77.8 — "low risk" — because payment behaviour was computed
+   * from cleared items only, found none, and was dropped from the average.
+   */
+  it('does not let stale strong financials outrank a book that is months overdue', () => {
+    const delinquent = scoreParty(profile, {
+      analysis: strongOldBooks,
+      paymentBehavior: null,
+      delinquency: arrears(147, 98),
+      asOf,
+    });
+    const current = scoreParty(profile, {
+      analysis: strongOldBooks,
+      paymentBehavior: null,
+      delinquency: arrears(0, 0),
+      asOf,
+    });
+
+    expect(delinquent.score).toBeLessThan(current.score);
+    expect(current.score - delinquent.score).toBeGreaterThan(20);
+    // Whatever the financials say, this must not land in the top two bands.
+    expect(['A', 'B']).not.toContain(delinquent.gradeCode);
+  });
+
+  it('separates one stale invoice from a book that is entirely overdue', () => {
+    const oneItem = scoreParty(profile, { analysis: strongOldBooks, delinquency: arrears(120, 5), asOf });
+    const wholeBook = scoreParty(profile, { analysis: strongOldBooks, delinquency: arrears(120, 100), asOf });
+    expect(oneItem.score).toBeGreaterThan(wholeBook.score);
+  });
+
+  it('drops the component for a counterparty with no receivables rather than scoring it zero', () => {
+    const result = scoreParty(profile, { analysis: strongOldBooks, delinquency: null, asOf });
+    expect(result.missingComponents).toContain('delinquency');
+    expect(result.components.reduce((s, c) => s + c.weight, 0)).toBeCloseTo(1, 6);
+  });
+
+  it('records the arrears it used as evidence', () => {
+    const result = scoreParty(profile, { analysis: strongOldBooks, delinquency: arrears(147, 98), asOf });
+    const evidence = result.evidence.find((e) => e.code === 'delinquency');
+    expect(evidence?.detail?.maxOpenDpd).toBe(147);
   });
 });

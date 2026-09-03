@@ -128,3 +128,58 @@ export function summarisePaymentBehavior(
 export function money(amount: number, currency: string): Money {
   return { amount, currency };
 }
+
+/**
+ * Current delinquency, from OPEN items.
+ *
+ * summarisePaymentBehavior deliberately looks only at cleared items, because
+ * how long someone has held an invoice is not how they pay. That reasoning is
+ * only half right, and the half it gets wrong is the dangerous half: an invoice
+ * 147 days past due and still unpaid is the strongest signal available, and
+ * treating it as "no data" let a counterparty with the worst arrears in the
+ * portfolio score as low risk on the strength of a four-year-old balance sheet.
+ *
+ * So arrears are their own measurement, taken from what is outstanding right
+ * now, and they are scored separately from payment history.
+ */
+export interface DelinquencySummary {
+  /** Worst days-past-due across open items; 0 when nothing is overdue. */
+  maxOpenDpd: number;
+  openTotal: number;
+  openOverdue: number;
+  /** Share of the open balance that is past due, 0–100. */
+  overdueSharePct: number;
+  overdueItemCount: number;
+}
+
+export function summariseDelinquency(
+  items: ArItem[],
+  asOf: IsoDate,
+  definition: DpdDefinition,
+): DelinquencySummary {
+  let maxOpenDpd = 0;
+  let openTotal = 0;
+  let openOverdue = 0;
+  let overdueItemCount = 0;
+
+  for (const item of items) {
+    if (!item.isOpen) continue;
+    const amount = item.amountBase.amount;
+    openTotal += amount;
+    // Overdue is judged from the due date whatever the tenant's DPD baseline —
+    // an invoice is late or it is not. The baseline only affects how late.
+    if (daysBetween(item.dueDate, asOf) <= 0) continue;
+    openOverdue += amount;
+    overdueItemCount += 1;
+    const dpd = daysPastDue(item, asOf, definition);
+    if (dpd > maxOpenDpd) maxOpenDpd = dpd;
+  }
+
+  return {
+    maxOpenDpd,
+    openTotal,
+    openOverdue,
+    overdueSharePct: openTotal === 0 ? 0 : (openOverdue / openTotal) * 100,
+    overdueItemCount,
+  };
+}

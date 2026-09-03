@@ -31,7 +31,8 @@ export interface Dictionary {
   >;
   flags: Record<
     'no_statement' | 'stale_filing' | 'negative_equity' | 'consecutive_losses'
-    | 'liquidity_below_floor' | 'leverage_above_ceiling' | 'revenue_decline_2y',
+    | 'liquidity_below_floor' | 'leverage_above_ceiling' | 'revenue_decline_2y'
+    | 'severely_delinquent',
     string
   >;
   party: Record<
@@ -130,6 +131,7 @@ const th: Dictionary = {
     liquidity_below_floor: 'สภาพคล่องต่ำกว่าเกณฑ์',
     leverage_above_ceiling: 'หนี้สินต่อทุนสูงกว่าเกณฑ์',
     revenue_decline_2y: 'รายได้ลดลงต่อเนื่อง',
+    severely_delinquent: 'ค้างชำระเกินเกณฑ์',
   },
   party: {
     financials: 'งบการเงิน',
@@ -291,6 +293,7 @@ const en: Dictionary = {
     liquidity_below_floor: 'Liquidity below floor',
     leverage_above_ceiling: 'Leverage above ceiling',
     revenue_decline_2y: 'Revenue declining',
+    severely_delinquent: 'Seriously in arrears',
   },
   party: {
     financials: 'Financial statements',

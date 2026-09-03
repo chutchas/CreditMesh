@@ -1,4 +1,5 @@
 import type { Evidence, PaymentBehavior, RiskComponent } from '../types/canonical';
+import type { DelinquencySummary } from './aging';
 import type { TenantProfile } from '../tenant/profile';
 import { gradeForScore } from '../tenant/profile';
 import type { FinancialAnalysis } from './financial-analysis';
@@ -24,17 +25,25 @@ export const COMPONENT_CODES = [
   'equity_strength',
   'filing_currency',
   'payment_behavior',
+  'delinquency',
 ] as const;
 
 export type ComponentCode = (typeof COMPONENT_CODES)[number];
 
+/**
+ * Current arrears carry the largest single weight, and deliberately so. A
+ * balance sheet describes what a counterparty looked like at a year end that
+ * may be years past; an unpaid invoice describes what they are doing to us
+ * today. When the two disagree, the invoice is the more recent evidence.
+ */
 export const DEFAULT_WEIGHTS: Record<ComponentCode, number> = {
-  profitability: 0.2,
-  liquidity: 0.2,
-  leverage: 0.15,
-  equity_strength: 0.15,
+  profitability: 0.15,
+  liquidity: 0.15,
+  leverage: 0.1,
+  equity_strength: 0.1,
   filing_currency: 0.1,
-  payment_behavior: 0.2,
+  payment_behavior: 0.15,
+  delinquency: 0.25,
 };
 
 const LABELS: Record<ComponentCode, { th: string; en: string }> = {
@@ -44,6 +53,7 @@ const LABELS: Record<ComponentCode, { th: string; en: string }> = {
   equity_strength: { th: 'ความแข็งแรงของส่วนทุน', en: 'Equity strength' },
   filing_currency: { th: 'ความสดของงบการเงิน', en: 'Filing currency' },
   payment_behavior: { th: 'พฤติกรรมการชำระ', en: 'Payment behaviour' },
+  delinquency: { th: 'ยอดค้างเกินกำหนดปัจจุบัน', en: 'Current arrears' },
 };
 
 /** Maps a raw value onto 0..1 where 1 is best, clamped at both ends. */
@@ -56,6 +66,8 @@ function ramp(value: number, worst: number, best: number): number {
 export interface ScoreInput {
   analysis: FinancialAnalysis;
   paymentBehavior?: PaymentBehavior | null;
+  /** Open arrears right now. Omitted only when the party has no receivables. */
+  delinquency?: DelinquencySummary | null;
   asOf: string;
 }
 
@@ -71,7 +83,7 @@ export interface ScoreResult {
 }
 
 export function scoreParty(profile: TenantProfile, input: ScoreInput): ScoreResult {
-  const { analysis, paymentBehavior } = input;
+  const { analysis, paymentBehavior, delinquency } = input;
   const weights = { ...DEFAULT_WEIGHTS, ...(profile.creditPolicy.scoringWeights as Partial<Record<ComponentCode, number>>) };
   const latest = analysis.ratios[0] ?? null;
 
@@ -107,6 +119,15 @@ export function scoreParty(profile: TenantProfile, input: ScoreInput): ScoreResu
       value: paymentBehavior?.weightedAvgDpd ?? null,
       normalized: paymentBehavior ? ramp(paymentBehavior.weightedAvgDpd, 60, 0) : null,
     },
+    {
+      code: 'delinquency',
+      // Worst open item, blended with how much of the balance is late: one
+      // small stale invoice is not the same as the whole book being overdue.
+      value: delinquency?.maxOpenDpd ?? null,
+      normalized: delinquency
+        ? ramp(delinquency.maxOpenDpd, 90, 0) * 0.7 + ramp(delinquency.overdueSharePct, 100, 0) * 0.3
+        : null,
+    },
   ];
 
   const present = raw.filter((r) => r.normalized !== null);
@@ -130,6 +151,21 @@ export function scoreParty(profile: TenantProfile, input: ScoreInput): ScoreResu
 
   const evidence: Evidence[] = [
     ...analysis.flags.flatMap((f) => f.evidence),
+    ...(delinquency
+      ? [
+          {
+            code: 'delinquency',
+            sourceRef: `ar_item:open:${input.asOf}`,
+            observedAt: `${input.asOf}T00:00:00Z`,
+            detail: {
+              maxOpenDpd: delinquency.maxOpenDpd,
+              openOverdue: delinquency.openOverdue,
+              overdueSharePct: Math.round(delinquency.overdueSharePct * 10) / 10,
+              overdueItemCount: delinquency.overdueItemCount,
+            },
+          } satisfies Evidence,
+        ]
+      : []),
     ...(paymentBehavior
       ? [
           {

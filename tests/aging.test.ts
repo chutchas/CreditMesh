@@ -3,6 +3,7 @@ import {
   buildAging,
   createStarterProfile,
   daysPastDue,
+  summariseDelinquency,
   summarisePaymentBehavior,
   type ArItem,
 } from '@creditmesh/core';
@@ -106,5 +107,54 @@ describe('summarisePaymentBehavior', () => {
     const result = summarisePaymentBehavior('t', 'p', [item({ documentNo: 'open' })], '2026-01-01', '2026-12-31', 'from_due_date');
     expect(result.invoiceCount).toBe(0);
     expect(result.weightedAvgDpd).toBe(0);
+  });
+});
+
+describe('summariseDelinquency', () => {
+  it('measures the worst open item and the share of the book that is late', () => {
+    const result = summariseDelinquency(
+      [
+        item({ documentNo: 'late', dueDate: '2026-04-09', amountBase: { amount: 5_900_000, currency: 'THB' } }),
+        item({ documentNo: 'current', dueDate: '2026-10-01', amountBase: { amount: 100_000, currency: 'THB' } }),
+      ],
+      '2026-09-03',
+      'from_due_date',
+    );
+
+    expect(result.maxOpenDpd).toBe(147);
+    expect(result.openOverdue).toBe(5_900_000);
+    expect(result.openTotal).toBe(6_000_000);
+    expect(result.overdueSharePct).toBeCloseTo(98.33, 1);
+    expect(result.overdueItemCount).toBe(1);
+  });
+
+  it('ignores cleared items — arrears are what is outstanding now', () => {
+    const result = summariseDelinquency(
+      [item({ documentNo: 'paid', dueDate: '2026-01-01', clearedDate: '2026-06-01', isOpen: false })],
+      '2026-09-03',
+      'from_due_date',
+    );
+    expect(result.maxOpenDpd).toBe(0);
+    expect(result.openTotal).toBe(0);
+  });
+
+  it('reports nothing overdue when everything is within terms', () => {
+    const result = summariseDelinquency(
+      [item({ documentNo: 'a', dueDate: '2026-10-01' })],
+      '2026-09-03',
+      'from_due_date',
+    );
+    expect(result.maxOpenDpd).toBe(0);
+    expect(result.overdueSharePct).toBe(0);
+  });
+
+  it('counts an item as overdue from its due date even when DPD runs from the invoice date', () => {
+    // The baseline changes how late something is, never whether it is late.
+    const result = summariseDelinquency(
+      [item({ documentNo: 'a', documentDate: '2026-06-01', dueDate: '2026-10-01' })],
+      '2026-09-03',
+      'from_invoice_date',
+    );
+    expect(result.overdueItemCount).toBe(0);
   });
 });
