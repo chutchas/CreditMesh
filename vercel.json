@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "npm run build --workspace @creditmesh/web",
-  "installCommand": "npm install",
-  "regions": ["sin1"]
-}

@@ -119,10 +119,32 @@ the row counts and the rejected rows.
 
 ## Deploying to Vercel
 
-Root directory: `apps/web`. The build command and output are the Next.js
-defaults. Set all three environment variables in the project settings — the
-service role key as a plain (non-`NEXT_PUBLIC_`) variable, on Production and
-Preview.
+**Root Directory: `apps/web`.** This is the only setting that has to be changed
+by hand, and it is the one that matters: with the root left at `./` Vercel
+detects no framework (the preset reads "Other") and then cannot find the build
+output, because it looks for `.next` beside the root directory and the app
+builds into `apps/web/.next`.
+
+With the root set to `apps/web`, Vercel detects Next.js on its own, and because
+the repo declares npm workspaces it runs the install from the repository root —
+so `@creditmesh/core` and `@creditmesh/adapters` resolve. Those two packages
+ship TypeScript source rather than a build artifact and are compiled by
+`transpilePackages` in `next.config.ts`, so there is no separate package build
+step to configure.
+
+Build command and output directory stay on the Next.js defaults.
+
+Environment variables, all three, on Production and Preview:
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | the project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | safe in the browser, RLS is what protects the data |
+| `SUPABASE_SERVICE_ROLE_KEY` | **never** with a `NEXT_PUBLIC_` prefix — it bypasses RLS entirely |
+
+`lib/supabase/admin.ts` starts with `import 'server-only'`, so importing the
+service-role client from a client component fails the build rather than shipping
+the key to the browser.
 
 ## Commands
 
