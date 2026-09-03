@@ -2,7 +2,13 @@ import 'server-only';
 
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { ImportedRow } from '@creditmesh/adapters';
-import { normalizeTaxId, resolveParties, type PartySourceRow } from '@creditmesh/core';
+import {
+  normalizeAddress,
+  normalizePersonName,
+  normalizeTaxId,
+  resolveParties,
+  type PartySourceRow,
+} from '@creditmesh/core';
 
 /**
  * Applies validated adapter output to the canonical tables.
@@ -368,4 +374,164 @@ export async function applyFinancialStatementRows(ctx: ApplyContext, rows: Impor
   }
 
   return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}
+
+/* ------------------------------------------------------------------ */
+/* Enrichment datasets — the inputs Module 2 reasons over               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Matched to counterparties by taxpayer id, never by name.
+ *
+ * A director list attached to the wrong company is worse than no director list:
+ * it produces a confident, evidenced, wrong conclusion about who is connected
+ * to whom, and Module 8 takes that all the way to an audit committee.
+ */
+export async function applyRegistryProfileRows(ctx: ApplyContext, rows: ImportedRow[]): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+  const payload: Record<string, unknown>[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    const taxId = normalizeTaxId(r.taxId === null ? null : String(r.taxId));
+    const partyId = taxId ? index.byTaxId.get(taxId) : undefined;
+    if (!partyId) {
+      skipped += 1;
+      continue;
+    }
+    const address = r.registeredAddress === null ? null : String(r.registeredAddress);
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      legal_status: r.legalStatus,
+      registered_capital: r.registeredCapital,
+      registration_date: r.registrationDate,
+      registered_address: address,
+      registered_address_norm: address ? normalizeAddress(address) : null,
+      industry_code: r.industryCode,
+      provider_id: 'manual_upload',
+      retrieved_at: new Date().toISOString(),
+    });
+  }
+
+  if (skipped > 0) log.note(`${skipped} row(s) have a tax id not matching any counterparty on file`);
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('party_registry_profile')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,party_id' });
+    log.check('writing registry profiles', error);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}
+
+/** Directors and person shareholders both land here. */
+async function applyPersonRoleRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  role: 'director' | 'shareholder',
+  nameField: string,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+
+  const { data: existingPeople, error: peopleError } = await ctx.admin
+    .from('person')
+    .select('id, full_name')
+    .eq('tenant_id', ctx.tenantId);
+  log.check('reading persons', peopleError);
+
+  const personIdByName = new Map(
+    (existingPeople ?? []).map((p) => [normalizePersonName(p.full_name), p.id as string]),
+  );
+
+  const links: Record<string, unknown>[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    const taxId = normalizeTaxId(r.taxId === null ? null : String(r.taxId));
+    const partyId = taxId ? index.byTaxId.get(taxId) : undefined;
+    if (!partyId) {
+      skipped += 1;
+      continue;
+    }
+
+    // A company shareholder is a relationship between two counterparties, not
+    // a person. Keeping the two apart is what lets Module 2 follow ownership
+    // chains without inventing people who do not exist.
+    if (role === 'shareholder' && String(r.holderType ?? 'person') === 'company') {
+      const holderTaxId = normalizeTaxId(r.holderTaxId === null ? null : String(r.holderTaxId));
+      const holderPartyId = holderTaxId ? index.byTaxId.get(holderTaxId) : undefined;
+      if (!holderPartyId || holderPartyId === partyId) {
+        skipped += 1;
+        continue;
+      }
+      const { error } = await ctx.admin.from('party_relationship').insert({
+        tenant_id: ctx.tenantId,
+        from_party_id: holderPartyId,
+        to_party_id: partyId,
+        kind: 'shareholder_of',
+        weight: 1,
+        evidence: [
+          {
+            code: 'registry_shareholder',
+            sourceRef: `import:${ctx.systemId}:${r.__rowNumber}`,
+            observedAt: new Date().toISOString(),
+            detail: { sharePct: r.sharePct },
+          },
+        ],
+      });
+      log.check('writing company shareholding', error);
+      continue;
+    }
+
+    const fullName = String(r[nameField] ?? '').trim();
+    if (fullName === '') {
+      skipped += 1;
+      continue;
+    }
+    const key = normalizePersonName(fullName);
+    let personId = personIdByName.get(key);
+    if (!personId) {
+      const { data: created, error } = await ctx.admin
+        .from('person')
+        .insert({ tenant_id: ctx.tenantId, full_name: fullName, provider_id: 'manual_upload' })
+        .select('id')
+        .single();
+      if (!log.check(`creating person "${fullName}"`, error) || !created) continue;
+      personId = created.id as string;
+      personIdByName.set(key, personId);
+    }
+
+    links.push({
+      tenant_id: ctx.tenantId,
+      person_id: personId,
+      party_id: partyId,
+      role,
+      share_pct: role === 'shareholder' ? r.sharePct : null,
+      as_of: r.since ?? null,
+      source_ref: `import:${ctx.systemId}:${r.__rowNumber}`,
+    });
+  }
+
+  if (skipped > 0) log.note(`${skipped} row(s) could not be matched to a counterparty on file`);
+
+  for (let i = 0; i < links.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('person_party_role')
+      .upsert(links.slice(i, i + 500), { onConflict: 'person_id,party_id,role' });
+    log.check(`writing ${role} links`, error);
+  }
+
+  return { inserted: log.failed ? 0 : links.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}
+
+export function applyDirectorRows(ctx: ApplyContext, rows: ImportedRow[]): Promise<ApplyResult> {
+  return applyPersonRoleRows(ctx, rows, 'director', 'personName');
+}
+
+export function applyShareholderRows(ctx: ApplyContext, rows: ImportedRow[]): Promise<ApplyResult> {
+  return applyPersonRoleRows(ctx, rows, 'shareholder', 'holderName');
 }

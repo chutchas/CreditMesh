@@ -5,10 +5,17 @@ entities on one ERP. The full product specification is in
 [`CreditMesh_Platform_Spec.md`](./CreditMesh_Platform_Spec.md); this file covers
 what exists in the repository and how to run it.
 
-**This release is R1 — Insight Pack:** Module 0 (Core Foundation), Module 1
-(Portfolio X-ray), Module 7 (Credit Term Simulator) and the CSV adapter. It runs
-without connecting to any source system, which is the point: an organisation can
-see a result from a single file upload before anyone opens an IT ticket.
+**Shipped so far:**
+
+- **R1 — Insight Pack.** Module 0 (Core Foundation), Module 1 (Portfolio X-ray),
+  Module 7 (Credit Term Simulator) and the CSV adapter. Runs without connecting
+  to any source system, which is the point: an organisation sees a result from a
+  single file upload before anyone opens an IT ticket. The Tenant Profile is
+  fully editable, which is what §9 makes the release gate.
+- **R2 — Group Intelligence (in progress).** Module 2 (Hidden Group Exposure)
+  and the Enrichment Gateway. Group resolution proposes corporate groups from
+  shared shareholders, directors and registered addresses, with a confidence
+  score, its evidence, and a human confirmation step that nothing bypasses.
 
 ---
 
@@ -72,12 +79,25 @@ if you want to understand who can see what.
 2. Sign in at `/th/login`. An account with no workspace lands on `/th/setup`.
 3. Create the workspace — that writes tenant, starter profile v1, one
    placeholder legal entity, and makes you admin.
-4. Import in this order, from `docs/samples/`: `party.csv`, then `ar_item.csv`,
-   `credit_limit.csv` and `financial_statement.csv`. Receivables and limits are
-   matched to counterparties by their source-system code, and statements by tax
-   id, so the register has to exist first.
+4. Import in this order, from `docs/samples/`. The register has to exist first:
+   receivables and limits are matched to counterparties by source-system code,
+   everything else by taxpayer id.
+
+   | Order | File | Dataset |
+   |---|---|---|
+   | 1 | `party.csv` | Counterparty register |
+   | 2 | `ar_item.csv` | Receivable items |
+   | 3 | `credit_limit.csv` | Credit limits |
+   | 4 | `financial_statement.csv` | Financial statements |
+   | 5 | `registry_profile.csv` | Company registry profile |
+   | 6 | `director.csv` | Directors |
+   | 7 | `shareholder.csv` | Shareholders |
+
 5. Portfolio → **Re-run analysis** to compute exposure, payment behaviour and
    risk assessments.
+6. Groups → **Re-run group resolution**. The sample data contains two groups
+   nobody would spot from a customer list: three counterparties under one
+   shareholder, and two more sharing a director.
 
 Every import runs in validate-first mode; nothing is written until you have seen
 the row counts and the rejected rows.
@@ -101,12 +121,17 @@ npm run lint:no-tenant-names   # P1 / P2 check
 
 ## What is deliberately not here yet
 
-Group resolution (Module 2), the collateral ledger workflow (Module 3), the
-enrichment gateway and the SAP adapter are R2/R3 and are not stubbed. The
-database carries the tables and the neutral shapes they need — `party_group`,
-`collateral`, `collateral_allocation`, `enrichment_snapshot` — because §6 is
+The collateral ledger workflow (Module 3) and the SAP adapter are R3 and are not
+stubbed. The database carries the tables and the neutral shapes they need —
+`collateral`, `collateral_allocation`, `collateral_event` — because §6 is
 explicit that retrofitting those shapes later means a rewrite, but no code reads
 them yet.
+
+The Enrichment Gateway ships with one provider, `manual_upload`: registry data
+arrives by spreadsheet. That is a deliberate first step rather than a stopgap —
+a commercial provider is an implementation of the same interface, and Module 2
+runs identically on either, so an organisation can see group exposure before a
+data contract is signed.
 
 Exposure currently means receivables only. `open_orders` and `undelivered_value`
 exist on `exposure_snapshot` and stay zero until an order feed exists, so the

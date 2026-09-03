@@ -198,6 +198,7 @@ export function importCsv(csvText: string, options: ImportOptions): AdapterResul
     // Defaults applied here rather than in core: they are file-format
     // conveniences, not business rules.
     if (spec.datasetId === 'party' && out.role === null) out.role = 'customer';
+    if (spec.datasetId === 'shareholder' && out.holderType === null) out.holderType = 'person';
     if ('currency' in out && (out.currency === null || out.currency === '') && options.defaultCurrency) {
       out.currency = options.defaultCurrency;
     }

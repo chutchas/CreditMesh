@@ -24,6 +24,7 @@ export default async function LocaleLayout({
   const nav: { href: string; label: string }[] = [
     { href: `/${locale}`, label: t.nav.dashboard },
     { href: `/${locale}/portfolio`, label: t.nav.portfolio },
+    { href: `/${locale}/groups`, label: t.nav.groups },
     { href: `/${locale}/simulator`, label: t.nav.simulator },
     { href: `/${locale}/import`, label: t.nav.import },
     { href: `/${locale}/admin`, label: t.nav.admin },

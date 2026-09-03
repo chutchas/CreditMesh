@@ -71,9 +71,15 @@ export function createStarterProfile(tenantId: string, displayName: string): Ten
       allowOverAllocation: false,
     },
     groupResolution: {
-      signalsEnabled: ['shareholder', 'director'],
+      signalsEnabled: ['shareholder', 'director', 'registered_address'],
       signalWeights: { shareholder: 0.5, director: 0.3, registered_address: 0.15, name_similarity: 0.05 },
-      confidenceThreshold: 0.6,
+      // 0.3 is chosen so the weights above produce a coherent default: a shared
+      // shareholder (0.5) or a shared director (0.3) is enough to propose a
+      // group for review, while a shared address (0.15) or a similar name
+      // (0.05) never proposes one on its own. Those two are the noisy signals —
+      // an address is usually a building and a name is usually a coincidence —
+      // so they only ever corroborate something stronger.
+      confidenceThreshold: 0.3,
       autoApply: false,
       excludedAddresses: [],
       excludedPersons: [],

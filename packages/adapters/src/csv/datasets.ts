@@ -135,6 +135,48 @@ export const DATASETS: DatasetSpec[] = [
       { canonicalField: 'receivables', type: 'number', required: false, aliases: ['receivables', 'accounts_receivable', 'ลูกหนี้การค้า'], description: 'Trade receivables' },
     ],
   },
+  {
+    datasetId: 'registry_profile',
+    entity: 'party',
+    labelTh: 'ข้อมูลจดทะเบียนนิติบุคคล',
+    labelEn: 'Company registry profile',
+    naturalKey: ['taxId'],
+    columns: [
+      { canonicalField: 'taxId', type: 'string', required: true, aliases: ['tax_id', 'taxid', 'registration_no', 'เลขผู้เสียภาษี', 'เลขทะเบียนนิติบุคคล'], description: 'Taxpayer id of the party' },
+      { canonicalField: 'legalStatus', type: 'string', required: false, aliases: ['status', 'legal_status', 'สถานะ', 'สถานะนิติบุคคล'], description: 'Registered status, as the registry words it' },
+      { canonicalField: 'registeredCapital', type: 'number', required: false, aliases: ['registered_capital', 'capital', 'ทุนจดทะเบียน'], description: 'Registered capital' },
+      { canonicalField: 'registrationDate', type: 'date', required: false, aliases: ['registration_date', 'incorporation_date', 'วันจดทะเบียน'], description: 'Date of incorporation' },
+      { canonicalField: 'registeredAddress', type: 'string', required: false, aliases: ['registered_address', 'address', 'ที่อยู่', 'ที่อยู่จดทะเบียน'], description: 'Registered address' },
+      { canonicalField: 'industryCode', type: 'string', required: false, aliases: ['industry_code', 'tsic', 'ประเภทธุรกิจ', 'รหัสธุรกิจ'], description: 'Industry classification code' },
+    ],
+  },
+  {
+    datasetId: 'director',
+    entity: 'party',
+    labelTh: 'กรรมการ',
+    labelEn: 'Directors',
+    naturalKey: ['taxId', 'personName'],
+    columns: [
+      { canonicalField: 'taxId', type: 'string', required: true, aliases: ['tax_id', 'taxid', 'registration_no', 'เลขผู้เสียภาษี'], description: 'Taxpayer id of the company' },
+      { canonicalField: 'personName', type: 'string', required: true, aliases: ['name', 'person_name', 'director_name', 'full_name', 'ชื่อ', 'ชื่อกรรมการ'], description: 'Director name' },
+      { canonicalField: 'position', type: 'string', required: false, aliases: ['position', 'role', 'title', 'ตำแหน่ง'], description: 'Position as the registry words it' },
+      { canonicalField: 'since', type: 'date', required: false, aliases: ['since', 'appointed_date', 'วันที่เริ่ม'], description: 'Appointed on' },
+    ],
+  },
+  {
+    datasetId: 'shareholder',
+    entity: 'party',
+    labelTh: 'ผู้ถือหุ้น',
+    labelEn: 'Shareholders',
+    naturalKey: ['taxId', 'holderName'],
+    columns: [
+      { canonicalField: 'taxId', type: 'string', required: true, aliases: ['tax_id', 'taxid', 'company_tax_id', 'เลขผู้เสียภาษี'], description: 'Taxpayer id of the company whose register this is' },
+      { canonicalField: 'holderName', type: 'string', required: true, aliases: ['holder_name', 'shareholder', 'shareholder_name', 'name', 'ชื่อผู้ถือหุ้น', 'ผู้ถือหุ้น'], description: 'Shareholder name' },
+      { canonicalField: 'holderType', type: 'enum', required: false, enumValues: ['person', 'company'], aliases: ['holder_type', 'type', 'ประเภทผู้ถือหุ้น'], description: 'person | company (defaults to person)' },
+      { canonicalField: 'holderTaxId', type: 'string', required: false, aliases: ['holder_tax_id', 'shareholder_tax_id', 'เลขผู้เสียภาษีผู้ถือหุ้น'], description: 'Taxpayer id of a company shareholder' },
+      { canonicalField: 'sharePct', type: 'number', required: false, aliases: ['share_pct', 'percent', 'percentage', 'shareholding', 'สัดส่วน', 'ร้อยละ'], description: 'Percentage held' },
+    ],
+  },
 ];
 
 export function getDataset(datasetId: string): DatasetSpec | undefined {

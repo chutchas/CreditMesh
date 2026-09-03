@@ -5,8 +5,11 @@ import { canWrite, getSession } from '../../../lib/session';
 import {
   applyArItemRows,
   applyCreditLimitRows,
+  applyDirectorRows,
   applyFinancialStatementRows,
   applyPartyRows,
+  applyRegistryProfileRows,
+  applyShareholderRows,
   type ApplyContext,
 } from '../../../lib/ingest';
 
@@ -96,6 +99,15 @@ export async function POST(request: Request) {
       break;
     case 'financial_statement':
       apply = await applyFinancialStatementRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'registry_profile':
+      apply = await applyRegistryProfileRows(ctx, result.rows);
+      break;
+    case 'director':
+      apply = await applyDirectorRows(ctx, result.rows);
+      break;
+    case 'shareholder':
+      apply = await applyShareholderRows(ctx, result.rows);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

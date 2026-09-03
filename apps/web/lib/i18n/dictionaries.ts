@@ -17,7 +17,15 @@ export interface Dictionary {
     | 'staleWarning' | 'never' | 'party' | 'entity' | 'currency' | 'back',
     string
   >;
-  nav: Record<'dashboard' | 'portfolio' | 'simulator' | 'import' | 'admin', string>;
+  nav: Record<'dashboard' | 'portfolio' | 'groups' | 'simulator' | 'import' | 'admin', string>;
+  groups: Record<
+    'title' | 'subtitle' | 'run' | 'running' | 'proposed' | 'confirmed' | 'rejected' | 'members'
+    | 'entities' | 'exposure' | 'overdue' | 'limit' | 'confidence' | 'evidence' | 'confirm'
+    | 'reject' | 'groupName' | 'noProposals' | 'noProposalsHint' | 'weakestLink' | 'exclusions'
+    | 'exclusionsHint' | 'personHub' | 'addressHub' | 'appearsIn' | 'ignoredAlready'
+    | 'neverAutomatic' | 'lastRun' | 'edgesFound' | 'belowThreshold' | 'confirmPrompt',
+    string
+  >;
   dashboard: Record<
     'title' | 'subtitle' | 'partiesTracked' | 'totalExposure' | 'overdue' | 'criticalFlags'
     | 'byGrade' | 'dataFreshness' | 'emptyState' | 'emptyStateCta',
@@ -89,9 +97,45 @@ const th: Dictionary = {
   nav: {
     dashboard: 'ภาพรวม',
     portfolio: 'พอร์ตคู่สัญญา',
+    groups: 'กลุ่มทุน',
     simulator: 'จำลองเทอมเครดิต',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
+  },
+  groups: {
+    title: 'Hidden Group Exposure',
+    subtitle: 'คู่สัญญาหลายรายที่เจ้าของเดียวกัน และ exposure รวมระดับกลุ่มข้ามนิติบุคคล',
+    run: 'ประมวลผลจับกลุ่มใหม่',
+    running: 'กำลังประมวลผล',
+    proposed: 'รอการยืนยัน',
+    confirmed: 'ยืนยันแล้ว',
+    rejected: 'ปฏิเสธแล้ว',
+    members: 'สมาชิก',
+    entities: 'นิติบุคคล',
+    exposure: 'Exposure รวมกลุ่ม',
+    overdue: 'เกินกำหนด',
+    limit: 'วงเงินรวม',
+    confidence: 'ความเชื่อมั่น',
+    evidence: 'หลักฐาน',
+    confirm: 'ยืนยันว่าเป็นกลุ่มเดียวกัน',
+    reject: 'ไม่ใช่กลุ่มเดียวกัน',
+    groupName: 'ชื่อกลุ่ม',
+    noProposals: 'ยังไม่มีกลุ่มที่ระบบเสนอ',
+    noProposalsHint: 'ต้องนำเข้าข้อมูลกรรมการ ผู้ถือหุ้น หรือที่อยู่จดทะเบียนก่อน แล้วจึงกดประมวลผล',
+    weakestLink: 'ความเชื่อมั่นของกลุ่มคือเส้นเชื่อมที่อ่อนที่สุด',
+    exclusions: 'รายการที่ระบบข้ามให้อัตโนมัติ',
+    exclusionsHint:
+      'บุคคลหรือที่อยู่ที่ผูกกับคู่สัญญาจำนวนมากเกินเกณฑ์ ระบบข้ามให้แล้วในรอบนี้ — มักเป็นกรรมการรับจ้าง สำนักงานบัญชี หรืออาคารสำนักงานให้เช่า ใส่ไว้ในรายการยกเว้นถาวรได้ที่หน้าตั้งค่าองค์กร',
+    personHub: 'บุคคล',
+    addressHub: 'ที่อยู่',
+    appearsIn: 'ผูกกับคู่สัญญา',
+    ignoredAlready: 'ข้ามแล้วในรอบนี้',
+    neverAutomatic:
+      'ผลจากหน้านี้ห้ามนำไปใช้อัตโนมัติ และห้ามใช้ระงับออเดอร์ — ระบบเสนอ คนยืนยัน',
+    lastRun: 'ประมวลผลล่าสุด',
+    edgesFound: 'เส้นเชื่อมที่พบ',
+    belowThreshold: 'ต่ำกว่าเกณฑ์ ไม่แสดง',
+    confirmPrompt: 'ยืนยันว่าคู่สัญญาเหล่านี้เป็นกลุ่มทุนเดียวกัน?',
   },
   dashboard: {
     title: 'ภาพรวมพอร์ต',
@@ -251,9 +295,45 @@ const en: Dictionary = {
   nav: {
     dashboard: 'Overview',
     portfolio: 'Portfolio',
+    groups: 'Groups',
     simulator: 'Term simulator',
     import: 'Import',
     admin: 'Tenant profile',
+  },
+  groups: {
+    title: 'Hidden group exposure',
+    subtitle: 'Counterparties under common ownership, and what the group owes across every entity',
+    run: 'Re-run group resolution',
+    running: 'Running',
+    proposed: 'Awaiting confirmation',
+    confirmed: 'Confirmed',
+    rejected: 'Rejected',
+    members: 'Members',
+    entities: 'Entities',
+    exposure: 'Group exposure',
+    overdue: 'Overdue',
+    limit: 'Total limit',
+    confidence: 'Confidence',
+    evidence: 'Evidence',
+    confirm: 'Confirm as one group',
+    reject: 'Not one group',
+    groupName: 'Group name',
+    noProposals: 'No proposed groups yet',
+    noProposalsHint: 'Import directors, shareholders or registered addresses first, then run resolution',
+    weakestLink: 'A group is only as confident as the weakest link holding it together',
+    exclusions: 'Automatically ignored',
+    exclusionsHint:
+      'People and addresses linked to more counterparties than the threshold allows were ignored in this run — usually nominee directors, accountancy firms, or serviced offices. Add them to the permanent exclusion list in the tenant profile.',
+    personHub: 'Person',
+    addressHub: 'Address',
+    appearsIn: 'linked to',
+    ignoredAlready: 'ignored in this run',
+    neverAutomatic:
+      'Nothing here is applied automatically, and none of it may be used to block an order. The system proposes; a person confirms.',
+    lastRun: 'Last run',
+    edgesFound: 'Edges found',
+    belowThreshold: 'below threshold, not shown',
+    confirmPrompt: 'Confirm that these counterparties are one corporate group?',
   },
   dashboard: {
     title: 'Portfolio overview',
