@@ -50,10 +50,10 @@ export default function ImportPanel({
     form.set('dataAsOf', dataAsOf);
 
     const res = await fetch('/api/import', { method: 'POST', body: form });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}) as Record<string, unknown>);
     setBusy(false);
     if (!res.ok) {
-      setError(json.error ?? res.statusText);
+      setError((json.error as string | undefined) ?? `POST /api/import → ${res.status} ${res.statusText}`);
       return;
     }
     setReport(json.report);

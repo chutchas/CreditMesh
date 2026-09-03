@@ -20,7 +20,8 @@ export default function SetupForm({ locale, defaultName }: { locale: string; def
     });
     setBusy(false);
     if (!res.ok) {
-      setError((await res.json().catch(() => ({}))).error ?? res.statusText);
+      const body = await res.json().catch(() => ({}) as { error?: string });
+      setError(body.error ?? `POST /api/bootstrap → ${res.status} ${res.statusText}`);
       return;
     }
     router.push(`/${locale}/admin`);

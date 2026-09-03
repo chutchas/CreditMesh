@@ -1,21 +1,22 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { DEFAULT_LOCALE, LOCALES } from './lib/i18n/config';
+import { localeRedirectTarget } from './lib/i18n/config';
 
 /**
- * Two jobs: keep the Supabase session cookie refreshed, and make sure every URL
- * carries a locale segment. Both languages are first-class (NFR §11), so
+ * Two jobs: keep the Supabase session cookie refreshed, and make sure every page
+ * URL carries a locale segment. Both languages are first-class (NFR §11), so
  * neither is the "real" path with the other bolted on.
+ *
+ * API routes are exempt from the locale rule and still get the session refresh —
+ * see localeRedirectTarget.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const hasLocale = LOCALES.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
-  if (!hasLocale) {
-    const header = request.headers.get('accept-language') ?? '';
-    const preferred = LOCALES.find((l) => header.toLowerCase().includes(l)) ?? DEFAULT_LOCALE;
+  const target = localeRedirectTarget(pathname, request.headers.get('accept-language') ?? '');
+  if (target) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${preferred}${pathname === '/' ? '' : pathname}`;
+    url.pathname = target;
     return NextResponse.redirect(url);
   }
 

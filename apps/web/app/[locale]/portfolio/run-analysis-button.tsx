@@ -14,7 +14,8 @@ export default function RunAnalysisButton({ label }: { label: string }) {
     const res = await fetch('/api/analysis/run', { method: 'POST' });
     setBusy(false);
     if (!res.ok) {
-      setError((await res.json().catch(() => ({ error: res.statusText }))).error ?? res.statusText);
+      const body = await res.json().catch(() => ({}) as { error?: string });
+      setError(body.error ?? `POST /api/analysis/run → ${res.status} ${res.statusText}`);
       return;
     }
     router.refresh();
