@@ -28,7 +28,7 @@ export interface Dictionary {
     | 'instruments' | 'held' | 'coverage' | 'expiring' | 'daysLeft' | 'overdueExpiry' | 'noData'
     | 'noDataHint' | 'noAlerts' | 'entity' | 'exposure' | 'warnings' | 'overAllocated'
     | 'claimWindowClosed' | 'expiredButActive' | 'idleAllocation' | 'unallocatedWarn'
-    | 'outboundExcluded' | 'coverageNote',
+    | 'outboundExcluded' | 'coverageNote' | 'overBy',
     string
   >;
   suppliers: Record<
@@ -162,6 +162,7 @@ const th: Dictionary = {
     exposure: 'Exposure',
     warnings: 'ข้อควรตรวจ',
     overAllocated: 'จัดสรรเกินมูลค่า',
+    overBy: 'เกินมูลค่า',
     claimWindowClosed: 'พ้นกำหนดเรียกร้องแล้วแต่ยังสถานะใช้งาน',
     expiredButActive: 'หมดอายุแล้วแต่ยังสถานะใช้งาน',
     idleAllocation: 'จัดสรรไว้แต่แทบไม่ได้ใช้',
@@ -445,6 +446,7 @@ const en: Dictionary = {
     exposure: 'Exposure',
     warnings: 'Worth checking',
     overAllocated: 'Allocated beyond face value',
+    overBy: 'Over by',
     claimWindowClosed: 'Claim window closed but still marked active',
     expiredButActive: 'Expired but still marked active',
     idleAllocation: 'Allocated and barely drawn',

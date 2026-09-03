@@ -204,7 +204,22 @@ export default async function CollateralPage({ params }: { params: Promise<{ loc
                   {formatMoney(balance.utilizedTotal, balance.collateral.currency, locale, { compact: true })}
                 </td>
                 <td className="tabular py-2 pr-3 text-right">
-                  {formatMoney(balance.unallocated, balance.collateral.currency, locale, { compact: true })}
+                  {balance.unallocated < 0 ? (
+                    <>
+                      {formatMoney(0, balance.collateral.currency, locale, { compact: true })}
+                      <div className="text-[11px] font-normal text-[#b42318]">
+                        {t.collateral.overBy}{' '}
+                        {formatMoney(
+                          -balance.unallocated,
+                          balance.collateral.currency,
+                          locale,
+                          { compact: true },
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    formatMoney(balance.unallocated, balance.collateral.currency, locale, { compact: true })
+                  )}
                 </td>
                 <td className="py-2 pr-3 text-xs">
                   {formatDate(balance.collateral.expiryDate, locale)}
