@@ -5,6 +5,7 @@ export * from './engines/financial-analysis';
 export * from './engines/party-resolution';
 export * from './engines/group-resolution';
 export * from './engines/risk-scoring';
+export * from './engines/supplier-watch';
 export * from './engines/term-simulator';
 export * from './engines/aging';
 export * from './enrichment/provider';

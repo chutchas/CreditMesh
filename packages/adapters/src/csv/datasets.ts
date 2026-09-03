@@ -177,6 +177,24 @@ export const DATASETS: DatasetSpec[] = [
       { canonicalField: 'sharePct', type: 'number', required: false, aliases: ['share_pct', 'percent', 'percentage', 'shareholding', 'สัดส่วน', 'ร้อยละ'], description: 'Percentage held' },
     ],
   },
+  {
+    datasetId: 'supplier_commitment',
+    entity: 'purchase_order',
+    labelTh: 'ภาระผูกพันกับซัพพลายเออร์',
+    labelEn: 'Supplier commitments',
+    naturalKey: ['legalEntityCode', 'partySourceCode'],
+    columns: [
+      { canonicalField: 'legalEntityCode', type: 'string', required: true, aliases: ['legal_entity', 'entity', 'company_code', 'นิติบุคคล'], description: 'Legal entity code' },
+      { canonicalField: 'partySourceCode', type: 'string', required: true, aliases: ['source_code', 'supplier_code', 'vendor_code', 'vendor_no', 'รหัสซัพพลายเออร์', 'รหัสผู้ขาย'], description: 'Supplier code in the source system' },
+      { canonicalField: 'openCommitment', type: 'number', required: false, aliases: ['open_commitment', 'open_po', 'undelivered_value', 'po_outstanding', 'ยอดสั่งค้างส่ง', 'มูลค่าค้างส่ง'], description: 'Ordered and not yet delivered' },
+      { canonicalField: 'annualSpend', type: 'number', required: false, aliases: ['annual_spend', 'spend', 'yearly_spend', 'ยอดซื้อต่อปี'], description: 'Annual spend with this supplier' },
+      { canonicalField: 'category', type: 'string', required: false, aliases: ['category', 'material_group', 'commodity', 'หมวด', 'หมวดสินค้า'], description: 'Purchasing category' },
+      { canonicalField: 'categoryShare', type: 'number', required: false, aliases: ['category_share', 'share_pct', 'share_of_category', 'สัดส่วนในหมวด'], description: 'This supplier share of the category, 0-100' },
+      { canonicalField: 'isSingleSource', type: 'enum', required: false, enumValues: ['true', 'false', 'yes', 'no', 'y', 'n', '1', '0'], aliases: ['single_source', 'is_single_source', 'sole_source', 'แหล่งเดียว'], description: 'No qualified alternative exists today' },
+      { canonicalField: 'switchingLeadTimeDays', type: 'number', required: false, aliases: ['switching_lead_time_days', 'lead_time_days', 'qualification_days', 'วันที่ใช้เปลี่ยนเจ้า'], description: 'Working days to qualify an alternative' },
+      { canonicalField: 'currency', type: 'string', required: false, aliases: ['currency', 'curr', 'สกุลเงิน'], description: 'Currency' },
+    ],
+  },
 ];
 
 export function getDataset(datasetId: string): DatasetSpec | undefined {

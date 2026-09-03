@@ -1,0 +1,4 @@
+entity,supplier_code,open_commitment,annual_spend,category,category_share,single_source,lead_time_days,currency
+E01,V-2201,"3,200,000","48,000,000",ขนส่งภายในประเทศ,85,yes,90,THB
+E01,V-2210,"900,000","22,000,000",บรรจุภัณฑ์,40,no,30,THB
+E02,V-3105,"5,400,000","61,000,000",เม็ดพลาสติก,100,yes,120,THB

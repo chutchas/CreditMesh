@@ -535,3 +535,77 @@ export function applyDirectorRows(ctx: ApplyContext, rows: ImportedRow[]): Promi
 export function applyShareholderRows(ctx: ApplyContext, rows: ImportedRow[]): Promise<ApplyResult> {
   return applyPersonRoleRows(ctx, rows, 'shareholder', 'holderName');
 }
+
+/* ------------------------------------------------------------------ */
+/* Supplier commitments — the dependency half of Module 9              */
+/* ------------------------------------------------------------------ */
+
+/** Spreadsheets say yes, y, 1, true, จริง. All of them mean the same thing. */
+function coerceBoolean(value: string | number | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  const s = String(value).trim().toLowerCase();
+  return s === 'true' || s === 'yes' || s === 'y' || s === '1' || s === 'จริง' || s === 'ใช่';
+}
+
+export async function applySupplierCommitmentRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  baseCurrency: string,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+  const payload: Record<string, unknown>[] = [];
+  const supplierPartyIds = new Set<string>();
+  let skipped = 0;
+
+  for (const r of rows) {
+    const key = `${ctx.systemId}|${String(r.legalEntityCode)}|${String(r.partySourceCode)}`;
+    const partyId = index.bySourceCode.get(key);
+    if (!partyId) {
+      skipped += 1;
+      continue;
+    }
+    supplierPartyIds.add(partyId);
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      legal_entity_code: String(r.legalEntityCode),
+      open_commitment: r.openCommitment ?? 0,
+      annual_spend: r.annualSpend ?? 0,
+      category: r.category,
+      category_share: r.categoryShare,
+      is_single_source: coerceBoolean(r.isSingleSource),
+      switching_lead_time_days: r.switchingLeadTimeDays,
+      currency: String(r.currency ?? baseCurrency),
+      source_ref: `import:${ctx.systemId}:${r.__rowNumber}`,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  if (skipped > 0) {
+    log.note(`${skipped} row(s) reference a supplier code not in the register — import the counterparty register first`);
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('supplier_commitment')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,party_id,legal_entity_code' });
+    log.check('writing supplier commitments', error);
+  }
+
+  // A counterparty we buy from is a supplier, whatever the register said when
+  // it was first loaded. P3 means this is one array element, not a second row
+  // in a second table.
+  for (const partyId of supplierPartyIds) {
+    const { data: party } = await ctx.admin.from('party').select('roles').eq('id', partyId).maybeSingle();
+    const roles: string[] = party?.roles ?? [];
+    if (roles.includes('supplier')) continue;
+    const { error } = await ctx.admin
+      .from('party')
+      .update({ roles: [...roles, 'supplier'] })
+      .eq('id', partyId);
+    log.check('adding the supplier role', error);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}

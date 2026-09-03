@@ -10,6 +10,7 @@ import {
   applyPartyRows,
   applyRegistryProfileRows,
   applyShareholderRows,
+  applySupplierCommitmentRows,
   type ApplyContext,
 } from '../../../lib/ingest';
 
@@ -108,6 +109,9 @@ export async function POST(request: Request) {
       break;
     case 'shareholder':
       apply = await applyShareholderRows(ctx, result.rows);
+      break;
+    case 'supplier_commitment':
+      apply = await applySupplierCommitmentRows(ctx, result.rows, baseCurrency);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

@@ -10,7 +10,15 @@ import type { AdapterCapabilities } from './contract';
 export const CSV_ADAPTER_CAPABILITIES: AdapterCapabilities = {
   adapterId: 'csv',
   version: '1.0.0',
-  entitiesSupported: ['party', 'ar_open_item', 'ar_cleared_item', 'credit_limit', 'financial_statement'],
+  entitiesSupported: [
+    'party',
+    'ar_open_item',
+    'ar_cleared_item',
+    'credit_limit',
+    'financial_statement',
+    'purchase_order',
+    'collateral',
+  ],
   syncModes: ['full_snapshot'],
   writeSupported: false,
   maxBatchSize: 50_000,

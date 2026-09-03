@@ -17,7 +17,15 @@ export interface Dictionary {
     | 'staleWarning' | 'never' | 'party' | 'entity' | 'currency' | 'back',
     string
   >;
-  nav: Record<'dashboard' | 'portfolio' | 'groups' | 'simulator' | 'import' | 'admin', string>;
+  nav: Record<'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'simulator' | 'import' | 'admin', string>;
+  suppliers: Record<
+    'title' | 'subtitle' | 'supplier' | 'fragility' | 'openCommitment' | 'annualSpend'
+    | 'category' | 'share' | 'singleSource' | 'leadTime' | 'disruptionExposure'
+    | 'interruption' | 'priority' | 'tracked' | 'singleSourced' | 'atRisk' | 'noData'
+    | 'noDataHint' | 'notScored' | 'assumedLeadTime' | 'priorityNote' | 'twoDimensions'
+    | 'yes' | 'no' | 'days' | 'coverageGap',
+    string
+  >;
   groups: Record<
     'title' | 'subtitle' | 'run' | 'running' | 'proposed' | 'confirmed' | 'rejected' | 'members'
     | 'entities' | 'exposure' | 'overdue' | 'limit' | 'confidence' | 'evidence' | 'confirm'
@@ -100,9 +108,40 @@ const th: Dictionary = {
     dashboard: 'ภาพรวม',
     portfolio: 'พอร์ตคู่สัญญา',
     groups: 'กลุ่มทุน',
+    suppliers: 'ซัพพลายเออร์',
     simulator: 'จำลองเทอมเครดิต',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
+  },
+  suppliers: {
+    title: 'Supplier Financial Watch',
+    subtitle: 'ซัพพลายเออร์ที่งบอ่อนแอแต่องค์กรพึ่งพาสูง จัดอันดับตามความเสียหายหากหยุดส่ง',
+    supplier: 'ซัพพลายเออร์',
+    fragility: 'ความเปราะบางทางการเงิน',
+    openCommitment: 'ยอดสั่งค้างส่ง',
+    annualSpend: 'ยอดซื้อต่อปี',
+    category: 'หมวด',
+    share: 'สัดส่วนในหมวด',
+    singleSource: 'แหล่งเดียว',
+    leadTime: 'วันที่ใช้เปลี่ยนเจ้า',
+    disruptionExposure: 'มูลค่าที่เสี่ยงหากหยุดส่ง',
+    interruption: 'มูลค่าที่ผลิตไม่ได้ระหว่างหาเจ้าใหม่',
+    priority: 'ลำดับที่ควรดู',
+    tracked: 'ซัพพลายเออร์ที่ติดตาม',
+    singleSourced: 'แหล่งเดียว',
+    atRisk: 'แหล่งเดียว + มีธงเตือน',
+    noData: 'ยังไม่มีข้อมูลภาระผูกพัน',
+    noDataHint: 'นำเข้าชุดข้อมูล "ภาระผูกพันกับซัพพลายเออร์" ก่อน แล้วจึงจะจัดอันดับได้',
+    notScored: 'ยังไม่ได้ให้คะแนน',
+    assumedLeadTime: 'ใช้ค่าสมมติ',
+    priorityNote:
+      'ลำดับใช้เพื่อจัดเรียงเท่านั้น ไม่ใช่ค่าความเสียหายที่คาดการณ์ — ความเปราะบางเป็นคะแนน ไม่ใช่ความน่าจะเป็น',
+    twoDimensions:
+      'สองแกนแยกกันเสมอ: ความเปราะบางคือโอกาสที่เขาจะล้ม ความพึ่งพาคือความเสียหายเมื่อล้ม — แก้คนละวิธี ตัวหนึ่งเฝ้าดู อีกตัวต้องออกแบบให้หายไป',
+    yes: 'ใช่',
+    no: 'ไม่',
+    days: 'วัน',
+    coverageGap: 'สัดส่วนที่ไม่มีใครทดแทน',
   },
   groups: {
     title: 'Hidden Group Exposure',
@@ -307,9 +346,40 @@ const en: Dictionary = {
     dashboard: 'Overview',
     portfolio: 'Portfolio',
     groups: 'Groups',
+    suppliers: 'Suppliers',
     simulator: 'Term simulator',
     import: 'Import',
     admin: 'Tenant profile',
+  },
+  suppliers: {
+    title: 'Supplier financial watch',
+    subtitle: 'Suppliers the organisation depends on that cannot afford to fail, ranked by what it costs if they stop',
+    supplier: 'Supplier',
+    fragility: 'Financial fragility',
+    openCommitment: 'Ordered, undelivered',
+    annualSpend: 'Annual spend',
+    category: 'Category',
+    share: 'Share of category',
+    singleSource: 'Sole source',
+    leadTime: 'Days to switch',
+    disruptionExposure: 'At stake if they stop',
+    interruption: 'Flow uncovered while switching',
+    priority: 'Priority',
+    tracked: 'Suppliers tracked',
+    singleSourced: 'Sole sourced',
+    atRisk: 'Sole sourced and flagged',
+    noData: 'No commitment data yet',
+    noDataHint: 'Import the “Supplier commitments” dataset first, then this page can rank them',
+    notScored: 'Not scored yet',
+    assumedLeadTime: 'assumed',
+    priorityNote:
+      'Priority orders the list; it is not an expected loss. Fragility is a score, not a probability.',
+    twoDimensions:
+      'Two dimensions, kept apart: fragility is how likely they fail, dependency is what it costs when they do. They have different remedies — one is watched, the other is engineered away.',
+    yes: 'Yes',
+    no: 'No',
+    days: 'days',
+    coverageGap: 'Share nothing else covers',
   },
   groups: {
     title: 'Hidden group exposure',
