@@ -1,12 +1,19 @@
 import Link from 'next/link';
 import type { AllocationRecord, CollateralRecord, ExposurePoint } from '@creditmesh/core';
-import { buildExpiryAlerts, computeBalances, computeCoverage, summariseCollateral } from '@creditmesh/core';
+import {
+  approvalChainFor,
+  buildExpiryAlerts,
+  computeBalances,
+  computeCoverage,
+  summariseCollateral,
+} from '@creditmesh/core';
 import { isLocale } from '../../../lib/i18n/config';
 import { getDictionary } from '../../../lib/i18n/dictionaries';
-import { requireSession } from '../../../lib/session';
+import { canWrite, requireSession } from '../../../lib/session';
 import { createClient } from '../../../lib/supabase/server';
 import { formatDate, formatMoney, formatPercent } from '../../../lib/format';
 import { Card, Empty, PageHeader, StatTile, Table } from '../../../components/ui';
+import AllocationPanel, { type RequestRow } from './allocation-panel';
 
 /**
  * Module 3, first phase — the register, read only.
@@ -95,6 +102,13 @@ export default async function CollateralPage({ params }: { params: Promise<{ loc
 
   const partyNames = new Map((parties ?? []).map((p) => [p.id as string, p.legal_name as string]));
 
+  // Phase two: the requests in flight against this register. Loaded here so
+  // the queue and the balances it argues about are read in one pass.
+  const { data: openRequests } = await supabase
+    .from('v_allocation_request_open')
+    .select('request_id, reference, party_name, from_entity_code, to_entity_code, amount, reason, status, requested_at, approved_by, rejected_by')
+    .order('requested_at', { ascending: false });
+
   const balances = computeBalances(collaterals, allocationRecords, {
     asOf,
     allowOverAllocation: session.profile.collateralPolicy.allowOverAllocation,
@@ -102,6 +116,39 @@ export default async function CollateralPage({ params }: { params: Promise<{ loc
   const alerts = buildExpiryAlerts(balances, session.profile, asOf);
   const coverage = computeCoverage(exposurePoints, balances, partyNames);
   const summary = summariseCollateral(balances, coverage, currency, asOf);
+
+  const requestRows: RequestRow[] = ((openRequests ?? []) as {
+    request_id: string;
+    reference: string;
+    party_name: string;
+    from_entity_code: string | null;
+    to_entity_code: string;
+    amount: number;
+    reason: string;
+    status: string;
+    requested_at: string;
+    approved_by: string[] | null;
+    rejected_by: string | null;
+  }[]).map((r) => ({
+    requestId: r.request_id,
+    reference: r.reference,
+    partyName: r.party_name,
+    fromEntityCode: r.from_entity_code,
+    toEntityCode: r.to_entity_code,
+    amount: Number(r.amount),
+    reason: r.reason,
+    status: r.status,
+    requestedAt: r.requested_at,
+    approvedBy: r.approved_by ?? [],
+    rejectedBy: r.rejected_by,
+    // Recomputed from the current policy rather than read from the snapshot:
+    // if the organisation has since changed who must approve a reallocation,
+    // the queue must reflect the rule in force now.
+    chain: approvalChainFor(
+      { fromEntityCode: r.from_entity_code, toEntityCode: r.to_entity_code },
+      session.profile.collateralPolicy,
+    ),
+  }));
 
   const warningLabel = (code: string): string => {
     switch (code) {
@@ -134,6 +181,49 @@ export default async function CollateralPage({ params }: { params: Promise<{ loc
       <p className="mb-4 rounded border border-[var(--color-line)] bg-white px-3 py-2 text-xs text-[var(--color-muted)]">
         {t.collateral.readOnlyNote}
       </p>
+
+      <div className="mb-4">
+        <Card title={t.allocation.title} footer={t.allocation.note}>
+          <AllocationPanel
+            instruments={balances
+              .filter((b) => b.collateral.direction === 'inbound')
+              .map((b) => ({
+                id: b.collateral.id,
+                reference: b.collateral.reference,
+                partyName: b.collateral.partyName,
+                unallocated: b.unallocated,
+              }))}
+            entities={session.profile.legalEntities
+              .filter((e) => e.isActive)
+              .map((e) => ({ code: e.code, name: e.displayName }))}
+            requests={requestRows}
+            canDecide={canWrite(session)}
+            labels={{
+              raise: t.allocation.raise,
+              instrument: t.allocation.instrument,
+              from: t.allocation.from,
+              fromPool: t.allocation.fromPool,
+              to: t.allocation.to,
+              amount: t.allocation.amount,
+              reason: t.allocation.reason,
+              reasonPlaceholder: t.allocation.reasonPlaceholder,
+              submit: t.allocation.submit,
+              submitting: t.allocation.submitting,
+              cancel: t.allocation.cancel,
+              approve: t.allocation.approve,
+              reject: t.allocation.reject,
+              apply: t.allocation.apply,
+              applying: t.allocation.applying,
+              note: t.allocation.noteLabel,
+              waitingOn: t.allocation.waitingOn,
+              approvedBy: t.allocation.approvedBy,
+              rejectedBy: t.allocation.rejectedBy,
+              readyToApply: t.allocation.readyToApply,
+              staleWarning: t.allocation.staleWarning,
+            }}
+          />
+        </Card>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile

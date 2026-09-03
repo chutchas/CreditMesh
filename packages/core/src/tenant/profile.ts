@@ -415,6 +415,7 @@ export type RiskGrade = z.infer<typeof RiskGradeSchema>;
 export type AgingBucket = z.infer<typeof AgingBucketSchema>;
 export type FieldMapping = z.infer<typeof FieldMappingSchema>;
 export type TenantRole = z.infer<typeof RoleSchema>;
+export type CollateralPolicy = z.infer<typeof CollateralPolicySchema>;
 export type NotificationPolicy = z.infer<typeof NotificationPolicySchema>;
 export type CollectionPolicy = z.infer<typeof CollectionPolicySchema>;
 export type LateChargePolicy = z.infer<typeof LateChargePolicySchema>;

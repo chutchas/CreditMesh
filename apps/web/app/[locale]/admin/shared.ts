@@ -34,6 +34,13 @@ export const SECTION_IDS = [
   'notification',
   'branding',
   'governance',
+  // §4.12–4.16, appended in spec order. Never renumbered: stored profile
+  // versions address sections by number, and a saved v1 would read wrong.
+  'collection',
+  'lateCharge',
+  'payment',
+  'legalScreening',
+  'riskIndex',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
@@ -62,8 +69,38 @@ export function sectionTitle(id: SectionId, say: Say): string {
       return say('เอกสารและแบรนด์', 'Templates & branding');
     case 'governance':
       return say('ธรรมาภิบาลข้อมูล', 'Data governance');
+    case 'collection':
+      return say('นโยบายการตามหนี้', 'Collection policy');
+    case 'lateCharge':
+      return say('ค่าปรับชำระล่าช้า', 'Late payment charge');
+    case 'payment':
+      return say('การรับชำระและรายการผิดปกติ', 'Payment & exceptions');
+    case 'legalScreening':
+      return say('การคัดกรองสถานะทางกฎหมาย', 'Legal & insolvency screening');
+    case 'riskIndex':
+      return say('คะแนนความเสี่ยงรวม', 'Risk index');
   }
 }
+
+/** Which top-level keys of the profile a section owns, for the changed marker. */
+export const SECTION_KEYS: Record<SectionId, (keyof TenantProfile)[]> = {
+  identity: ['identity', 'effectiveFrom'],
+  entities: ['legalEntities'],
+  sources: ['sourceSystems', 'fieldMappings'],
+  enrichment: ['enrichmentProviders'],
+  credit: ['creditPolicy'],
+  collateral: ['collateralPolicy'],
+  groups: ['groupResolution'],
+  workflow: ['workflow'],
+  notification: ['notification'],
+  branding: ['branding'],
+  governance: ['governance'],
+  collection: ['collectionPolicy'],
+  lateCharge: ['lateChargePolicy'],
+  payment: ['paymentPolicy'],
+  legalScreening: ['legalScreening'],
+  riskIndex: ['riskIndex'],
+};
 
 /** Spec §4 numbering, shown so the screen can be read next to the document. */
 export function sectionRef(id: SectionId): string {
@@ -79,6 +116,11 @@ export function sectionRef(id: SectionId): string {
     notification: '§4.9',
     branding: '§4.10',
     governance: '§4.11',
+    collection: '§4.12',
+    lateCharge: '§4.13',
+    payment: '§4.14',
+    legalScreening: '§4.15',
+    riskIndex: '§4.16',
   };
   return order[id];
 }
@@ -86,6 +128,9 @@ export function sectionRef(id: SectionId): string {
 /** Which section an issue path belongs to, so errors can be shown on the tab. */
 export function sectionForPath(path: string): SectionId | null {
   if (path.startsWith('identity')) return 'identity';
+  // Lives on the identity tab. Without this line an invalid effective date
+  // reports "the profile has errors" and highlights no tab at all.
+  if (path.startsWith('effectiveFrom')) return 'identity';
   if (path.startsWith('legalEntities')) return 'entities';
   if (path.startsWith('sourceSystems') || path.startsWith('fieldMappings')) return 'sources';
   if (path.startsWith('enrichmentProviders')) return 'enrichment';
@@ -96,6 +141,11 @@ export function sectionForPath(path: string): SectionId | null {
   if (path.startsWith('notification')) return 'notification';
   if (path.startsWith('branding')) return 'branding';
   if (path.startsWith('governance')) return 'governance';
+  if (path.startsWith('collectionPolicy')) return 'collection';
+  if (path.startsWith('lateChargePolicy')) return 'lateCharge';
+  if (path.startsWith('paymentPolicy')) return 'payment';
+  if (path.startsWith('legalScreening')) return 'legalScreening';
+  if (path.startsWith('riskIndex')) return 'riskIndex';
   return null;
 }
 

@@ -208,6 +208,13 @@ export interface Dictionary {
     | 'groupExposureAfter' | 'maxSingleLimit' | 'grade' | 'score' | 'blockCode' | 'blockReason',
     string
   >;
+  allocation: Record<
+    'title' | 'note' | 'raise' | 'instrument' | 'from' | 'fromPool' | 'to' | 'amount' | 'reason'
+    | 'reasonPlaceholder' | 'submit' | 'submitting' | 'cancel' | 'approve' | 'reject' | 'apply'
+    | 'applying' | 'noteLabel' | 'waitingOn' | 'approvedBy' | 'rejectedBy' | 'readyToApply'
+    | 'staleWarning',
+    string
+  >;
   collateral: Record<
     'title' | 'subtitle' | 'readOnlyNote' | 'register' | 'reference' | 'party' | 'type' | 'issuer'
     | 'faceValue' | 'allocated' | 'utilized' | 'unallocated' | 'idle' | 'expiry' | 'claimDeadline'
@@ -1009,6 +1016,33 @@ const th: Dictionary = {
     score: 'คะแนน',
     blockCode: 'รหัสการระงับ',
     blockReason: 'เหตุผลจากต้นทาง',
+  },
+  allocation: {
+    title: 'คำขอโยกหลักประกัน',
+    note:
+      'ระบบจะให้โยกได้เฉพาะส่วนที่ยังไม่ถูกใช้ — ส่วนที่ใช้ไปแล้วกำลังคุ้มครองยอดที่มีอยู่จริง การโยกออกคือการทิ้งยอดนั้นให้ไม่มีหลักประกันโดยไม่มีใครตัดสินใจ และนิติบุคคลที่เสียสิทธิ์ต้องเป็นผู้อนุมัติเอง ส่วนกลางอนุมัติแทนไม่ได้',
+    raise: 'ขอโยกหลักประกัน',
+    instrument: 'หลักประกัน',
+    from: 'โยกจาก',
+    fromPool: 'ส่วนที่ยังไม่จัดสรร',
+    to: 'ไปให้',
+    amount: 'จำนวนเงิน',
+    reason: 'เหตุผล',
+    reasonPlaceholder: 'เช่น ออเดอร์ใหม่ที่ E02 เกินวงเงิน ต้องการหลักประกันเพิ่ม 2 ล้าน',
+    submit: 'ส่งคำขอ',
+    submitting: 'กำลังส่ง…',
+    cancel: 'ยกเลิก',
+    approve: 'อนุมัติในนาม',
+    reject: 'ไม่อนุมัติ',
+    apply: 'ดำเนินการโยก',
+    applying: 'กำลังโยก…',
+    noteLabel: 'บันทึกย่อ',
+    waitingOn: 'รออนุมัติจาก',
+    approvedBy: 'อนุมัติแล้ว',
+    rejectedBy: 'ไม่อนุมัติโดย',
+    readyToApply: 'อนุมัติครบแล้ว รอดำเนินการ',
+    staleWarning:
+      'การอนุมัติกับการดำเนินการเป็นคนละขั้นโดยตั้งใจ — ระหว่างสองขั้นนี้ยอดอาจเปลี่ยน ตอนกดดำเนินการระบบจะตรวจกับยอดปัจจุบันอีกครั้งและปฏิเสธพร้อมเหตุผลถ้าเงื่อนไขไม่เป็นจริงแล้ว การถูกปฏิเสธตรงนั้นคือระบบทำงานถูก ไม่ใช่ข้อผิดพลาด',
   },
   collateral: {
     title: 'ทะเบียนหลักประกันและการจัดสรร',
@@ -1989,6 +2023,33 @@ const en: Dictionary = {
     score: 'Score',
     blockCode: 'Block code',
     blockReason: 'Source reason',
+  },
+  allocation: {
+    title: 'Allocation requests',
+    note:
+      'Only undrawn value can be moved: what is already drawn is covering a balance that exists, and moving it leaves that balance uncovered without anyone deciding to. The entity giving up cover approves for itself — central credit cannot approve on its behalf.',
+    raise: 'Request a move',
+    instrument: 'Instrument',
+    from: 'Move from',
+    fromPool: 'the unallocated remainder',
+    to: 'To',
+    amount: 'Amount',
+    reason: 'Reason',
+    reasonPlaceholder: 'e.g. new order at E02 exceeds its limit, needs 2M of cover',
+    submit: 'Submit',
+    submitting: 'Submitting…',
+    cancel: 'Cancel',
+    approve: 'Approve as',
+    reject: 'Reject',
+    apply: 'Apply the move',
+    applying: 'Applying…',
+    noteLabel: 'Note',
+    waitingOn: 'waiting on',
+    approvedBy: 'approved',
+    rejectedBy: 'rejected by',
+    readyToApply: 'fully approved, ready to apply',
+    staleWarning:
+      'Approving and applying are deliberately separate acts. Balances move between them, so applying re-validates against the numbers as they are now and refuses with its reasons when they no longer hold — that refusal is the workflow working, not a fault.',
   },
   collateral: {
     title: 'Collateral & allocation ledger',

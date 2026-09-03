@@ -7,6 +7,7 @@ import type { Locale } from '../../../lib/i18n/config';
 import {
   makeSay,
   SECTION_IDS,
+  SECTION_KEYS,
   sectionForPath,
   sectionRef,
   sectionTitle,
@@ -15,6 +16,13 @@ import {
 import { EnrichmentSection, EntitiesSection, IdentitySection, SourcesSection } from './sections-config';
 import { CollateralPolicySection, CreditPolicySection, GroupResolutionSection } from './sections-policy';
 import { BrandingSection, GovernanceSection, NotificationSection, WorkflowSection } from './sections-ops';
+import {
+  CollectionPolicySection,
+  LateChargePolicySection,
+  LegalScreeningSection,
+  PaymentPolicySection,
+  RiskIndexSection,
+} from './sections-collect';
 
 export interface ProfileVersion {
   id: string;
@@ -24,20 +32,6 @@ export interface ProfileVersion {
   created_at: string;
 }
 
-/** Which top-level keys of the profile a section owns, for the changed marker. */
-const SECTION_KEYS: Record<SectionId, (keyof TenantProfile)[]> = {
-  identity: ['identity', 'effectiveFrom'],
-  entities: ['legalEntities'],
-  sources: ['sourceSystems', 'fieldMappings'],
-  enrichment: ['enrichmentProviders'],
-  credit: ['creditPolicy'],
-  collateral: ['collateralPolicy'],
-  groups: ['groupResolution'],
-  workflow: ['workflow'],
-  notification: ['notification'],
-  branding: ['branding'],
-  governance: ['governance'],
-};
 
 export default function ProfileEditor({
   locale,
@@ -252,6 +246,11 @@ export default function ProfileEditor({
           {active === 'notification' ? <NotificationSection {...sectionProps} /> : null}
           {active === 'branding' ? <BrandingSection {...sectionProps} /> : null}
           {active === 'governance' ? <GovernanceSection {...sectionProps} /> : null}
+          {active === 'collection' ? <CollectionPolicySection {...sectionProps} /> : null}
+          {active === 'lateCharge' ? <LateChargePolicySection {...sectionProps} /> : null}
+          {active === 'payment' ? <PaymentPolicySection {...sectionProps} /> : null}
+          {active === 'legalScreening' ? <LegalScreeningSection {...sectionProps} /> : null}
+          {active === 'riskIndex' ? <RiskIndexSection {...sectionProps} /> : null}
         </section>
 
         <section className="mt-5 rounded-lg border border-[var(--color-line)] bg-white p-4">

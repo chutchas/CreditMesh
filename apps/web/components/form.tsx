@@ -58,6 +58,66 @@ export function TextInput({
   );
 }
 
+/**
+ * A date the tenant states, always ISO and always nullable-by-empty.
+ *
+ * Used for the effective period on a late-charge rate, which is the one field
+ * in the profile where a wrong or missing date silently changes money that was
+ * already billed: a recomputation of last quarter has to find last quarter's
+ * rate, and it finds it by this date.
+ */
+export function DateInput({
+  value,
+  onChange,
+  disabled,
+  nullable,
+  nullLabel,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+  disabled?: boolean;
+  nullable?: boolean;
+  nullLabel?: string;
+}) {
+  if (nullable && value === null) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-[var(--color-muted)]">{nullLabel}</span>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(new Date().toISOString().slice(0, 10))}
+          className="rounded border border-[var(--color-line)] bg-white px-2 py-1 text-[11px] disabled:opacity-60"
+        >
+          +
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="date"
+        value={value ?? ''}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value || null)}
+        className={inputClass}
+      />
+      {nullable ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(null)}
+          className="rounded px-1.5 py-1 text-[11px] text-[var(--color-muted)] disabled:opacity-60"
+          title={nullLabel}
+        >
+          ✕
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function NumberInput({
   value,
   onChange,
