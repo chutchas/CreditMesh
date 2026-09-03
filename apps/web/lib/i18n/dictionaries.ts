@@ -24,7 +24,8 @@ export interface Dictionary {
     | 'reject' | 'groupName' | 'noProposals' | 'noProposalsHint' | 'weakestLink' | 'exclusions'
     | 'exclusionsHint' | 'personHub' | 'addressHub' | 'appearsIn' | 'ignoredAlready'
     | 'neverAutomatic' | 'lastRun' | 'edgesFound' | 'belowThreshold' | 'confirmPrompt'
-    | 'hubsIgnored' | 'groupsProposed',
+    | 'hubsIgnored' | 'groupsProposed' | 'limitSum' | 'limitSumCaveat' | 'groupUtilisation'
+    | 'largestSingleLimit',
     string
   >;
   dashboard: Record<
@@ -139,6 +140,11 @@ const th: Dictionary = {
     confirmPrompt: 'ยืนยันว่าคู่สัญญาเหล่านี้เป็นกลุ่มทุนเดียวกัน?',
     hubsIgnored: 'ฮับที่ข้าม',
     groupsProposed: 'กลุ่มที่เสนอ',
+    limitSum: 'ผลรวมวงเงินที่อนุมัติแยกราย',
+    limitSumCaveat:
+      'ไม่มีใครเคยอนุมัติวงเงินก้อนนี้ให้เจ้าของรายเดียว — เป็นผลบวกของวงเงินที่อนุมัติแยกกันคนละครั้ง วงเงินเดี่ยวที่ใหญ่ที่สุดในกลุ่มคือ',
+    groupUtilisation: 'ใช้ไปเทียบผลรวม',
+    largestSingleLimit: 'วงเงินเดี่ยวสูงสุด',
   },
   dashboard: {
     title: 'ภาพรวมพอร์ต',
@@ -341,6 +347,11 @@ const en: Dictionary = {
     confirmPrompt: 'Confirm that these counterparties are one corporate group?',
     hubsIgnored: 'hubs ignored',
     groupsProposed: 'proposed',
+    limitSum: 'Sum of separate limits',
+    limitSumCaveat:
+      'Nobody approved this as one limit — it is the sum of limits approved separately. The largest single limit in the group is',
+    groupUtilisation: 'Used against that sum',
+    largestSingleLimit: 'Largest single limit',
   },
   dashboard: {
     title: 'Portfolio overview',

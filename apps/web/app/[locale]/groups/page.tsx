@@ -17,6 +17,7 @@ interface ExposureRow {
   total_exposure: number | null;
   total_overdue: number | null;
   total_credit_limit: number | null;
+  max_single_limit: number | null;
 }
 
 /**
@@ -38,7 +39,7 @@ export default async function GroupsPage({ params }: { params: Promise<{ locale:
   const [{ data: exposure }, { data: groups }, { data: exclusions }] = await Promise.all([
     supabase
       .from('v_group_exposure')
-      .select('group_id, group_name, confidence, status, member_count, entity_count, total_exposure, total_overdue, total_credit_limit')
+      .select('group_id, group_name, confidence, status, member_count, entity_count, total_exposure, total_overdue, total_credit_limit, max_single_limit')
       .in('status', ['proposed', 'confirmed'])
       .order('total_exposure', { ascending: false, nullsFirst: false }),
     supabase
@@ -92,6 +93,7 @@ export default async function GroupsPage({ params }: { params: Promise<{ locale:
       totalExposure: summary ? Number(summary.total_exposure ?? 0) : 0,
       totalOverdue: summary ? Number(summary.total_overdue ?? 0) : 0,
       totalCreditLimit: summary?.total_credit_limit == null ? null : Number(summary.total_credit_limit),
+      maxSingleLimit: summary?.max_single_limit == null ? null : Number(summary.max_single_limit),
       entityCount: summary?.entity_count ?? 0,
     };
   });

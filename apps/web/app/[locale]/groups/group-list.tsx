@@ -22,6 +22,7 @@ export interface GroupRow {
   totalExposure: number;
   totalOverdue: number;
   totalCreditLimit: number | null;
+  maxSingleLimit: number | null;
   entityCount: number;
 }
 
@@ -136,16 +137,42 @@ export default function GroupList({
 
             <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
-                <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="mb-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <Stat label={labels.exposure} value={formatMoney(group.totalExposure, currency, locale, { compact: true })} />
                   <Stat
                     label={labels.overdue}
                     value={formatMoney(group.totalOverdue, currency, locale, { compact: true })}
                     tone={group.totalOverdue > 0 ? 'warn' : undefined}
                   />
-                  <Stat label={labels.limit} value={formatMoney(group.totalCreditLimit, currency, locale, { compact: true })} />
+                  {/* Labelled as the sum it is. Three separate approvals do not
+                      add up to one decision, and a reader who takes this for a
+                      group limit draws the opposite conclusion from the one the
+                      module exists to deliver. */}
+                  <Stat label={labels.limitSum} value={formatMoney(group.totalCreditLimit, currency, locale, { compact: true })} />
                   <Stat label={labels.entities} value={String(group.entityCount)} />
                 </div>
+
+                {group.maxSingleLimit !== null ? (
+                  <p
+                    className={`mb-3 text-[11px] leading-4 ${
+                      group.totalExposure > group.maxSingleLimit ? 'text-[#b54708]' : 'text-[var(--color-muted)]'
+                    }`}
+                  >
+                    {labels.limitSumCaveat}{' '}
+                    <span className="tabular font-medium">
+                      {formatMoney(group.maxSingleLimit, currency, locale, { compact: true })}
+                    </span>
+                    {group.totalCreditLimit ? (
+                      <>
+                        {' · '}
+                        {labels.groupUtilisation}{' '}
+                        <span className="tabular">
+                          {formatPercent((group.totalExposure / group.totalCreditLimit) * 100, locale, 0)}
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
 
                 <h3 className="mb-1.5 text-xs font-medium text-[var(--color-muted)]">
                   {labels.members} ({group.members.length})
