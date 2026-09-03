@@ -111,3 +111,23 @@ them yet.
 Exposure currently means receivables only. `open_orders` and `undelivered_value`
 exist on `exposure_snapshot` and stay zero until an order feed exists, so the
 shape does not change when it arrives.
+
+## Troubleshooting
+
+**`Cannot find module '../lightningcss.darwin-arm64.node'`** (or the equivalent for
+`@tailwindcss/oxide` or `@next/swc`)
+
+Three dependencies ship a prebuilt native binary per platform, chosen at install
+time. If `node_modules` was installed on one operating system and is then used on
+another — which happens when the folder is shared with a Linux VM or a container —
+the platform package for the machine you are actually running on can be left as an
+empty directory. npm sees the directory, considers it installed, and a plain
+`npm install` will not repair it.
+
+```bash
+rm -rf node_modules
+npm install
+```
+
+Run the install on the machine that will run `npm run dev`. The lockfile records
+every platform's variant, so nothing else needs to change.
