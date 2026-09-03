@@ -20,9 +20,38 @@ export interface Dictionary {
   nav: Record<
     'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'orders' | 'simulator'
     | 'legal' | 'payments' | 'exceptions' | 'collection' | 'lateCharges' | 'watchlist'
-    | 'riskIndex' | 'cockpit' | 'memo' | 'import' | 'admin',
+    | 'riskIndex' | 'cockpit' | 'memo' | 'whitespace' | 'provision' | 'relatedParty'
+    | 'import' | 'admin',
     string
   >;
+  whitespace: Record<
+    'title' | 'subtitle' | 'ownerNote' | 'oneEntity' | 'oneEntityHint' | 'noData' | 'noDataHint'
+    | 'opportunities' | 'clean' | 'withCautions' | 'revenueToday' | 'crossSell' | 'scoreNote'
+    | 'party' | 'buysFrom' | 'notYetIn' | 'creditView' | 'noObjection' | 'byEntity' | 'entity'
+    | 'notYetBuying' | 'spendElsewhere' | 'prospectNote',
+    string
+  >;
+  provision: Record<
+    'title' | 'subtitle' | 'scopeNote' | 'noRuns' | 'noRunsHint' | 'run' | 'running'
+    | 'forwardLooking' | 'asOf' | 'asOfLabel' | 'grossExposure' | 'proposed' | 'proposedShort'
+    | 'unrated' | 'unratedHint' | 'overlay' | 'overlayHint' | 'lossMatrix' | 'matrixNote'
+    | 'bucket' | 'rate' | 'noRate' | 'observedOn' | 'byCounterparty' | 'party' | 'gross'
+    | 'secured' | 'ead' | 'specific' | 'notes' | 'runHistory',
+    string
+  >;
+  relatedParty: Record<
+    'title' | 'subtitle' | 'restricted' | 'restrictedHint' | 'notAConclusion' | 'noData'
+    | 'noDataHint' | 'run' | 'running' | 'findingsLabel' | 'suppliersLabel' | 'openFindings'
+    | 'totalFindings' | 'suppliersInvolved' | 'toCheck' | 'noEmployeeDataNote' | 'linkType'
+    | 'strength' | 'counterparties' | 'persons' | 'whatToCheck' | 'disposition',
+    string
+  >;
+  conflictCodes: Record<
+    'supplier_in_own_group' | 'common_owner_suppliers' | 'director_also_customer'
+    | 'shared_registered_address',
+    string
+  >;
+  dispositions: Record<'open' | 'checked_no_issue' | 'escalated' | 'declared', string>;
   cockpit: Record<
     'title' | 'subtitle' | 'allClear' | 'heldOrders' | 'promisesDue' | 'openExceptions'
     | 'newSignals' | 'legalToReview' | 'collateralExpiring' | 'groupsToConfirm' | 'memoDrafts'
@@ -292,6 +321,9 @@ const th: Dictionary = {
     riskIndex: 'คะแนนความเสี่ยง',
     cockpit: 'วันนี้ต้องทำอะไร',
     memo: 'บันทึกเครดิต',
+    whitespace: 'โอกาสขายข้ามนิติบุคคล',
+    provision: 'ค่าเผื่อหนี้สงสัยจะสูญ',
+    relatedParty: 'ความเชื่อมโยงซัพพลายเออร์',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
   },
@@ -738,6 +770,107 @@ const th: Dictionary = {
     collateral: 'หลักประกัน',
     'financial statements': 'งบการเงิน',
   },
+  whitespace: {
+    title: 'ลูกค้าที่ยังซื้อไม่ครบทั้งกลุ่ม',
+    subtitle: 'ใครซื้อจากนิติบุคคลหนึ่งแล้ว แต่ยังไม่ซื้อจากอีกแห่ง',
+    ownerNote:
+      'คำเตือนของข้อ 7 ที่ไม่ใช่เรื่องเทคนิค — รายชื่อที่ไม่มีคนฝั่งขายรับไปเป็นเจ้าของ คือรายชื่อที่ไม่มีใครโทร ควรตกลงเจ้าภาพก่อนส่งรายการนี้ออกไป',
+    oneEntity: 'มีนิติบุคคลเดียวในระบบ',
+    oneEntityHint: 'หน้านี้เปรียบเทียบข้ามนิติบุคคล ต้องมีอย่างน้อย 2 แห่งใน Tenant Profile',
+    noData: 'ทุกรายซื้อครบทุกนิติบุคคลแล้ว',
+    noDataHint: 'หรือยังนำเข้าข้อมูล exposure ไม่ครบทุกนิติบุคคล',
+    opportunities: 'รายที่ยังซื้อไม่ครบ',
+    clean: 'เครดิตไม่ติดขัด',
+    withCautions: 'มีข้อควรระวัง',
+    revenueToday: 'ยอดซื้อปัจจุบัน',
+    crossSell: 'โอกาสขายข้ามนิติบุคคล',
+    scoreNote:
+      'ลำดับคำนวณจากยอดที่ซื้อกับเราวันนี้ คูณกับสัดส่วนนิติบุคคลที่ยังไม่ได้ซื้อ — เป็นเครื่องมือจัดลำดับ ไม่ใช่ประมาณการรายได้',
+    party: 'คู่สัญญา',
+    buysFrom: 'ซื้อจาก',
+    notYetIn: 'ยังไม่ซื้อจาก',
+    creditView: 'มุมมองเครดิต',
+    noObjection: 'ไม่มีข้อทักท้วง',
+    byEntity: 'สรุปรายนิติบุคคล',
+    entity: 'นิติบุคคล',
+    notYetBuying: 'รายที่ยังไม่ซื้อ',
+    spendElsewhere: 'ยอดที่ซื้อกับที่อื่นในกลุ่ม',
+    prospectNote:
+      'ส่วนการหาลูกค้าใหม่ต้องใช้ฐานข้อมูลนิติบุคคลภายนอก ซึ่งแพลตฟอร์มไม่ได้เป็นเจ้าของและไม่ขายต่อ — ทำงานผ่าน Enrichment Gateway ด้วยบัญชีของ tenant เอง และวันนี้ provider ที่ใช้ได้คือ manual_upload คือรายชื่อที่คนทำมาเอง',
+  },
+  provision: {
+    title: 'ค่าเผื่อหนี้สงสัยจะสูญ',
+    subtitle: 'ข้อเสนอค่าเผื่อ พร้อมอัตราที่ใช้และฐานข้อมูลที่อัตรานั้นมาจาก',
+    scopeNote:
+      'แพลตฟอร์มเสนอ ไม่บันทึกบัญชี — คนที่เซ็นงบเป็นคนตัดสิน (P5) และเมื่อประวัติไม่พอจะหาอัตราได้ ระบบจะบอกว่าไม่มีอัตรา ไม่ใช่ใส่ค่าที่ดูสมเหตุสมผลลงไป เพราะช่องว่างเรียกความสนใจของผู้สอบบัญชีได้ แต่ตัวเลขที่แต่งขึ้นไม่เรียก',
+    noRuns: 'ยังไม่เคยคำนวณ',
+    noRunsHint: 'กด “คำนวณค่าเผื่อ” เพื่อคำนวณจากอายุหนี้ ณ วันที่เลือก',
+    run: 'คำนวณค่าเผื่อ',
+    running: 'กำลังคำนวณ…',
+    forwardLooking: 'ปัจจัยมองไปข้างหน้า',
+    asOf: 'ณ วันที่',
+    asOfLabel: 'ณ',
+    grossExposure: 'ยอดลูกหนี้รวม',
+    proposed: 'ค่าเผื่อที่เสนอ',
+    proposedShort: 'ค่าเผื่อ',
+    unrated: 'ยอดที่ยังไม่มีอัตรา',
+    unratedHint: 'ยังไม่ได้ตั้งค่าเผื่อ — ต้องตัดสินใจเอง',
+    overlay: 'ปัจจัยมองไปข้างหน้า',
+    overlayHint: 'ต้องระบุเอง ระบบไม่คาดการณ์ให้',
+    lossMatrix: 'อัตราความสูญเสียตามอายุหนี้',
+    matrixNote:
+      'อัตราที่มาจากประวัติน้อยเกินไปจะไม่ถูกใช้ และแสดงเหตุผลไว้ — อัตราที่คำนวณจากยอดไม่กี่แสนไม่ใช่อัตราความสูญเสีย แต่เป็นเรื่องเล่า',
+    bucket: 'ช่วงอายุ',
+    rate: 'อัตรา',
+    noRate: 'ไม่มีอัตรา',
+    observedOn: 'ฐานที่ใช้คำนวณ',
+    byCounterparty: 'แยกรายคู่สัญญา',
+    party: 'คู่สัญญา',
+    gross: 'ยอดลูกหนี้',
+    secured: 'มีหลักประกัน',
+    ead: 'ยอดที่เสี่ยงจริง',
+    specific: 'ตั้งเฉพาะราย',
+    notes: 'หมายเหตุ',
+    runHistory: 'ประวัติการคำนวณ',
+  },
+  relatedParty: {
+    title: 'ความเชื่อมโยงของซัพพลายเออร์',
+    subtitle: 'รายการที่ควรตรวจสอบ สำหรับหน่วยตรวจสอบภายใน',
+    restricted: 'เข้าถึงได้เฉพาะหน่วยตรวจสอบ',
+    restrictedHint: 'ข้อมูลในหน้านี้ระบุตัวบุคคล จึงเปิดเฉพาะบทบาท auditor และ admin',
+    notAConclusion:
+      'ทุกแถวคือ “รายการที่ควรตรวจสอบ” ไม่ใช่ข้อสรุปว่ามีความผิด นามสกุลเดียวกันหรือที่อยู่เดียวกันไม่ใช่การทุจริต — ค่าความเชื่อมโยงบอกความแน่นของเส้นเชื่อม ไม่ใช่ความน่าจะเป็นของการกระทำผิด',
+    noData: 'ยังไม่พบความเชื่อมโยง',
+    noDataHint: 'กด “ตรวจความเชื่อมโยง” หลังนำเข้าทะเบียนซัพพลายเออร์และข้อมูลกรรมการ/ผู้ถือหุ้น',
+    run: 'ตรวจความเชื่อมโยง',
+    running: 'กำลังตรวจ…',
+    findingsLabel: 'รายการที่พบ',
+    suppliersLabel: 'ซัพพลายเออร์',
+    openFindings: 'ยังไม่ได้ตรวจ',
+    totalFindings: 'รายการทั้งหมด',
+    suppliersInvolved: 'ซัพพลายเออร์ที่เกี่ยวข้อง',
+    toCheck: 'รายการที่ควรตรวจสอบ',
+    noEmployeeDataNote:
+      'ระบบไม่เทียบกับข้อมูลพนักงาน และจะไม่ทำจนกว่าจะผ่านฝ่ายบุคคลและการพิจารณากฎหมายคุ้มครองข้อมูลส่วนบุคคล — ในโค้ดไม่มีทางเข้าสำหรับรายชื่อพนักงานเลย เพื่อไม่ให้มีใครต่อเข้ามาได้ในสุดสัปดาห์เดียว',
+    linkType: 'ประเภทความเชื่อมโยง',
+    strength: 'ความแน่น',
+    counterparties: 'คู่สัญญา',
+    persons: 'บุคคล',
+    whatToCheck: 'สิ่งที่ควรตรวจ',
+    disposition: 'ผลการตรวจ',
+  },
+  conflictCodes: {
+    supplier_in_own_group: 'ซัพพลายเออร์เป็นบริษัทในกลุ่มเราเอง',
+    common_owner_suppliers: 'หลายซัพพลายเออร์มีเจ้าของ/กรรมการคนเดียวกัน',
+    director_also_customer: 'กรรมการเป็นลูกค้าด้วย',
+    shared_registered_address: 'จดทะเบียนที่อยู่เดียวกัน',
+  },
+  dispositions: {
+    open: 'ยังไม่ได้ตรวจ',
+    checked_no_issue: 'ตรวจแล้ว ไม่มีประเด็น',
+    escalated: 'ส่งต่อ',
+    declared: 'แจ้งเป็นรายการเกี่ยวโยง',
+  },
   legal: {
     title: 'สถานะทางกฎหมายและล้มละลาย',
     subtitle: 'คัดกรองต่อเนื่องทั้งพอร์ต แทนการเปิดเว็บค้นทีละรายเมื่อนึกได้',
@@ -1168,6 +1301,9 @@ const en: Dictionary = {
     riskIndex: 'Risk index',
     cockpit: 'Today',
     memo: 'Credit memo',
+    whitespace: 'White space',
+    provision: 'Provision',
+    relatedParty: 'Supplier links',
     import: 'Import',
     admin: 'Tenant profile',
   },
@@ -1613,6 +1749,107 @@ const en: Dictionary = {
     'settled payment history': 'settled payment history',
     collateral: 'collateral',
     'financial statements': 'financial statements',
+  },
+  whitespace: {
+    title: 'White space',
+    subtitle: 'Who buys from one of the group’s entities and not from the others',
+    ownerNote:
+      '§7’s non-technical warning: a list nobody in sales has agreed to own is a list nobody calls. Settle who receives this before sending it out.',
+    oneEntity: 'Only one legal entity',
+    oneEntityHint: 'This page compares across entities — the profile needs at least two',
+    noData: 'Every counterparty already buys from every entity',
+    noDataHint: 'Or exposure has not been imported for every entity yet',
+    opportunities: 'Cross-sell candidates',
+    clean: 'No credit objection',
+    withCautions: 'With cautions',
+    revenueToday: 'Buys today',
+    crossSell: 'Cross-sell opportunities',
+    scoreNote:
+      'Ordered by what they spend with us today against how much of the group they have not met. An ordering device, not a revenue forecast.',
+    party: 'Counterparty',
+    buysFrom: 'Buys from',
+    notYetIn: 'Not yet in',
+    creditView: 'Credit’s view',
+    noObjection: 'no objection',
+    byEntity: 'By entity',
+    entity: 'Entity',
+    notYetBuying: 'Not yet buying',
+    spendElsewhere: 'Spend elsewhere in the group',
+    prospectNote:
+      'Prospecting needs an external company database the platform neither owns nor resells. It runs through the Enrichment Gateway on the tenant’s own account, and today the available provider is manual_upload — a list somebody produced.',
+  },
+  provision: {
+    title: 'Expected credit loss',
+    subtitle: 'A proposed provision, with the rates used and the history behind each one',
+    scopeNote:
+      'The platform proposes; the person who signs the accounts decides (P5). Where the history is too thin to derive a rate, it says so rather than filling in something plausible — a gap gets an auditor’s attention and an invented number does not.',
+    noRuns: 'No runs yet',
+    noRunsHint: 'Press "Run provision" to compute against the ageing as at a chosen date',
+    run: 'Run provision',
+    running: 'Computing…',
+    forwardLooking: 'Forward-looking',
+    asOf: 'As at',
+    asOfLabel: 'as at',
+    grossExposure: 'Gross receivables',
+    proposed: 'Proposed provision',
+    proposedShort: 'Provision',
+    unrated: 'Unrated balance',
+    unratedHint: 'not provisioned — decide these deliberately',
+    overlay: 'Forward-looking overlay',
+    overlayHint: 'stated, never inferred',
+    lossMatrix: 'Loss rates by ageing bucket',
+    matrixNote:
+      'A rate derived from too little history is not used, and the reason is shown. A rate from one small cohort is an anecdote, not a loss rate.',
+    bucket: 'Bucket',
+    rate: 'Rate',
+    noRate: 'no rate',
+    observedOn: 'Observed on',
+    byCounterparty: 'By counterparty',
+    party: 'Counterparty',
+    gross: 'Gross',
+    secured: 'Secured',
+    ead: 'At default',
+    specific: 'specific provision',
+    notes: 'Notes',
+    runHistory: 'Run history',
+  },
+  relatedParty: {
+    title: 'Supplier relationships',
+    subtitle: 'Items to check, for internal audit',
+    restricted: 'Restricted to internal audit',
+    restrictedHint: 'These rows name individuals and are open only to the auditor and admin roles',
+    notAConclusion:
+      'Every row is an item to check, not a finding of wrongdoing. A shared surname or a shared address is not corruption — the strength figure describes how firm the link is, not how likely anything improper is.',
+    noData: 'No links found',
+    noDataHint: 'Press "Check relationships" after importing the supplier register and director/shareholder data',
+    run: 'Check relationships',
+    running: 'Checking…',
+    findingsLabel: 'findings',
+    suppliersLabel: 'suppliers',
+    openFindings: 'Not yet checked',
+    totalFindings: 'Findings',
+    suppliersInvolved: 'Suppliers involved',
+    toCheck: 'Items to check',
+    noEmployeeDataNote:
+      'Nothing here is compared against employee records, and it will not be until HR and a data protection review say so — there is no code path that accepts a staff list, so nobody can wire one in over a weekend.',
+    linkType: 'Link',
+    strength: 'Strength',
+    counterparties: 'Counterparties',
+    persons: 'People',
+    whatToCheck: 'What to check',
+    disposition: 'Outcome',
+  },
+  conflictCodes: {
+    supplier_in_own_group: 'Supplier is one of our own companies',
+    common_owner_suppliers: 'Several suppliers behind one person',
+    director_also_customer: 'Director is also a customer',
+    shared_registered_address: 'Registered at the same address',
+  },
+  dispositions: {
+    open: 'not yet checked',
+    checked_no_issue: 'checked, no issue',
+    escalated: 'escalated',
+    declared: 'declared as related party',
   },
   legal: {
     title: 'Legal & insolvency',

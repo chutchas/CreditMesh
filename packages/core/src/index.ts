@@ -18,5 +18,8 @@ export * from './engines/late-charge';
 export * from './engines/watchlist';
 export * from './engines/risk-index';
 export * from './engines/credit-memo';
+export * from './engines/related-party';
+export * from './engines/ecl';
+export * from './engines/prospect';
 export * from './enrichment/provider';
 export * from './enrichment/gateway';

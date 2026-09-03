@@ -40,6 +40,7 @@ export default async function LocaleLayout({
       items: [
         { href: `/${locale}/collateral`, label: t.nav.collateral },
         { href: `/${locale}/suppliers`, label: t.nav.suppliers },
+        { href: `/${locale}/related-party`, label: t.nav.relatedParty },
         { href: `/${locale}/legal`, label: t.nav.legal },
         { href: `/${locale}/watchlist`, label: t.nav.watchlist },
       ],
@@ -49,6 +50,8 @@ export default async function LocaleLayout({
       items: [
         { href: `/${locale}/orders`, label: t.nav.orders },
         { href: `/${locale}/memo`, label: t.nav.memo },
+        { href: `/${locale}/whitespace`, label: t.nav.whitespace },
+        { href: `/${locale}/provision`, label: t.nav.provision },
         { href: `/${locale}/simulator`, label: t.nav.simulator },
       ],
     },
