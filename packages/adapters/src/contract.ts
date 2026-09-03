@@ -18,7 +18,8 @@ export type CanonicalEntity =
   | 'purchase_order'
   | 'supplier'
   | 'collateral'
-  | 'financial_statement';
+  | 'financial_statement'
+  | 'legal_event';
 
 export interface AdapterCapabilities {
   adapterId: string;

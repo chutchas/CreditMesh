@@ -251,6 +251,26 @@ export const DATASETS: DatasetSpec[] = [
       { canonicalField: 'status', type: 'enum', required: false, enumValues: ['blocked', 'released', 'cancelled'], aliases: ['status', 'สถานะ'], description: 'Status (defaults to blocked)' },
     ],
   },
+
+  {
+    datasetId: 'legal_event',
+    entity: 'legal_event',
+    labelTh: 'ผลค้นสถานะทางกฎหมาย',
+    labelEn: 'Legal & insolvency search results',
+    naturalKey: ['source', 'caseNo', 'eventType', 'subjectName'],
+    columns: [
+      { canonicalField: 'subjectType', type: 'enum', required: true, enumValues: ['party', 'person'], aliases: ['subject_type', 'type', 'ประเภทผู้ถูกค้น'], description: 'Whether the search result is about a company or a natural person' },
+      { canonicalField: 'subjectName', type: 'string', required: true, aliases: ['subject_name', 'name', 'company_name', 'person_name', 'ชื่อ', 'ชื่อผู้ถูกค้น'], description: 'Name exactly as the source printed it' },
+      { canonicalField: 'subjectIdentifier', type: 'string', required: false, aliases: ['tax_id', 'identifier', 'registration_no', 'national_id', 'เลขนิติบุคคล', 'เลขประจำตัว'], description: 'Taxpayer / registration / national id — without this the result cannot be linked, only reviewed' },
+      { canonicalField: 'eventType', type: 'enum', required: true, enumValues: ['bankruptcy', 'rehabilitation', 'legal_execution', 'litigation', 'dissolution', 'liquidation', 'status_change'], aliases: ['event_type', 'case_type', 'ประเภทคดี', 'ประเภทเหตุการณ์'], description: 'What kind of legal event this is' },
+      { canonicalField: 'caseNo', type: 'string', required: true, aliases: ['case_no', 'case_number', 'reference', 'red_case_no', 'black_case_no', 'เลขคดี', 'เลขที่คดี'], description: 'Case or reference number from the source — required, a result without one cannot be checked' },
+      { canonicalField: 'source', type: 'string', required: true, aliases: ['source', 'agency', 'provider', 'แหล่งข้อมูล'], description: 'Where the result came from (LED, DBD, court, provider)' },
+      { canonicalField: 'court', type: 'string', required: false, aliases: ['court', 'ศาล', 'หน่วยงาน'], description: 'Court or agency' },
+      { canonicalField: 'eventDate', type: 'date', required: false, aliases: ['event_date', 'order_date', 'วันที่มีคำสั่ง', 'วันที่เกิดเหตุ'], description: 'Date of the order or event' },
+      { canonicalField: 'publishedDate', type: 'date', required: false, aliases: ['published_date', 'publish_date', 'วันที่ประกาศ'], description: 'Date it was published' },
+      { canonicalField: 'detail', type: 'string', required: false, aliases: ['detail', 'description', 'remark', 'รายละเอียด', 'หมายเหตุ'], description: 'Free text from the source' },
+    ],
+  },
 ];
 
 export function getDataset(datasetId: string): DatasetSpec | undefined {

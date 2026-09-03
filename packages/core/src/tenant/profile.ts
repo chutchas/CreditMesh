@@ -190,6 +190,202 @@ export const GovernanceSchema = z.object({
   exportPolicy: z.enum(['allow', 'watermark', 'deny']).default('allow'),
 });
 
+/* ----------------------------------------------------------------------- */
+/* §4.12–4.16 — the Collect and Legal sections, appended after 4.11.        */
+/*                                                                          */
+/* Appended rather than inserted, even though 4.12 belongs next to 4.5 by   */
+/* topic. The profile editor and every stored profile version address       */
+/* sections by number; inserting in the middle would make an already-saved   */
+/* v1 profile read wrong. Every field here carries a default and every       */
+/* section is `.default({})` at the top level, so a profile saved before      */
+/* these existed still parses and simply picks up the defaults.              */
+/* ----------------------------------------------------------------------- */
+
+/* §4.12 Collection policy ------------------------------------------------ */
+export const CollectionPolicySchema = z.object({
+  /** Ordering inputs for the daily queue, weighted. Not a risk score. */
+  strategyWeights: z
+    .object({ amount: z.number(), daysOverdue: z.number(), riskGrade: z.number() })
+    .default({ amount: 0.5, daysOverdue: 0.3, riskGrade: 0.2 }),
+  contactStages: z
+    .array(z.enum(['reminder', 'first_call', 'formal_notice', 'final_notice', 'legal_notice']))
+    .default(['reminder', 'first_call', 'formal_notice', 'final_notice', 'legal_notice']),
+  /** Days past due at which each stage becomes appropriate. */
+  stageTriggerDays: z.record(z.string(), z.number().int()).default({
+    reminder: 1,
+    first_call: 7,
+    formal_notice: 30,
+    final_notice: 60,
+    legal_notice: 90,
+  }),
+  ptpMaxDays: z.number().int().positive().default(30),
+  ptpMaxBrokenBeforeEscalation: z.number().int().positive().default(2),
+  disputeReasons: z
+    .array(z.string())
+    .default(['ของไม่ครบ', 'ราคาไม่ตรงสัญญา', 'ยังไม่ได้รับใบกำกับภาษี', 'รอเอกสารวางบิล', 'คุณภาพสินค้า']),
+  escalationMatrix: z
+    .array(z.object({ fromAmount: z.number(), toAmount: z.number().nullable(), role: z.string() }))
+    .default([]),
+  /** Cases nobody may chase — a dispute the organisation has itself accepted. */
+  holdWhenDisputeAccepted: z.boolean().default(true),
+  workingCalendarHolidays: z.array(isoDate).default([]),
+  assignmentRules: z
+    .array(z.object({ legalEntityCode: z.string().nullable(), segment: z.string().nullable(), ownerRole: z.string() }))
+    .default([]),
+});
+
+/* §4.13 Late payment charge policy -------------------------------------- */
+export const LateChargeRateSchema = z.object({
+  /** Annual percentage. Stored with the period it applied to, never alone. */
+  annualRatePct: z.number(),
+  effectiveFrom: isoDate,
+  effectiveTo: isoDate.nullable().default(null),
+  segment: z.string().nullable().default(null),
+  gradeCode: z.string().nullable().default(null),
+});
+
+export const LateChargePolicySchema = z.object({
+  rates: z.array(LateChargeRateSchema).default([]),
+  dayCountConvention: z.enum(['365', '360', 'actual']).default('365'),
+  gracePeriodDays: z.number().int().min(0).default(7),
+  chargeStartFrom: z.enum(['due_date', 'invoice_date']).default('due_date'),
+  minimumChargeAmount: z.number().min(0).default(100),
+  roundingRule: z.enum(['none', 'nearest_1', 'nearest_0.01', 'down_1']).default('nearest_1'),
+  /** Almost always false. Compounding a late charge is a contract question. */
+  compounding: z.boolean().default(false),
+  excludedPartyIds: z.array(z.string()).default([]),
+  waiverAuthority: z
+    .array(z.object({ role: z.string(), maxAmount: z.number().nullable() }))
+    .default([]),
+  approvalChain: z.array(z.string()).default([]),
+  noticeTemplateRef: z.string().nullable().default(null),
+});
+
+/* §4.14 Payment & exception policy -------------------------------------- */
+export const PaymentPolicySchema = z.object({
+  channels: z
+    .array(
+      z.enum([
+        'cheque',
+        'bill_of_exchange',
+        'bank_transfer',
+        'bill_payment',
+        'barcode',
+        'e_payment',
+        'direct_debit',
+        'cash',
+        'other',
+      ]),
+    )
+    .default(['cheque', 'bank_transfer', 'bill_payment', 'e_payment']),
+  /** Tried in order. The first rule that resolves to exactly one invoice wins. */
+  matchingRules: z
+    .array(z.enum(['invoice_no', 'amount_and_date', 'party_and_amount', 'party_and_reference']))
+    .default(['invoice_no', 'amount_and_date', 'party_and_amount']),
+  amountTolerance: z.number().min(0).default(1),
+  amountTolerancePct: z.number().min(0).default(0.5),
+  dateToleranceDays: z.number().int().min(0).default(5),
+  exceptionTypes: z
+    .array(
+      z.enum([
+        'returned_cheque',
+        'reversal',
+        'mismatch',
+        'missing',
+        'failed_transfer',
+        'overpayment',
+        'unidentified_receipt',
+      ]),
+    )
+    .default(['returned_cheque', 'reversal', 'mismatch', 'failed_transfer', 'overpayment', 'unidentified_receipt']),
+  /**
+   * The heart of §4.14 (P7): which exception types stop being an accounting
+   * chore and become a credit signal. A returned cheque that ends its life in
+   * a reconciliation report is data thrown away.
+   */
+  creditSignalTypes: z
+    .array(z.string())
+    .default(['returned_cheque', 'reversal', 'failed_transfer']),
+  chequeReturnWindowDays: z.number().int().positive().default(60),
+  chequeReturnCountForWatchlist: z.number().int().positive().default(2),
+  resolutionSlaDays: z.number().int().positive().default(7),
+  unidentifiedReceiptSlaDays: z.number().int().positive().default(5),
+});
+
+/* §4.15 Legal & insolvency screening policy ------------------------------ */
+export const LegalScreeningPolicySchema = z.object({
+  sources: z
+    .array(z.enum(['led', 'dbd', 'court', 'provider_api', 'manual_upload']))
+    .default(['manual_upload']),
+  scope: z.enum(['party', 'person', 'both']).default('party'),
+  /** Days between screenings per grade. A worse grade is looked at more often. */
+  frequencyDaysByGrade: z.record(z.string(), z.number().int().positive()).default({}),
+  defaultFrequencyDays: z.number().int().positive().default(180),
+  /**
+   * Never `name_only`. Matching a court result on a name alone produces a
+   * confident, evidenced, wrong conclusion about a named individual — the same
+   * failure Module 8 warns about, except here it damages a person's reputation.
+   */
+  requireIdentifierMatch: z.boolean().default(true),
+  eventTypes: z
+    .array(
+      z.enum([
+        'bankruptcy',
+        'rehabilitation',
+        'legal_execution',
+        'litigation',
+        'dissolution',
+        'liquidation',
+        'status_change',
+      ]),
+    )
+    .default(['bankruptcy', 'rehabilitation', 'legal_execution', 'litigation', 'dissolution', 'liquidation']),
+  severityMap: z
+    .record(z.string(), z.enum(['critical', 'high', 'medium', 'low']))
+    .default({
+      bankruptcy: 'critical',
+      rehabilitation: 'critical',
+      liquidation: 'critical',
+      dissolution: 'high',
+      legal_execution: 'high',
+      litigation: 'medium',
+      status_change: 'low',
+    }),
+  /** How much of a natural person's identifier may be stored at all. */
+  personIdStorage: z.enum(['none', 'last4', 'hash']).default('last4'),
+  personEventVisibleToRoles: z.array(z.string()).default(['credit_manager', 'admin']),
+  /** Default true, and the UI does not offer a way to turn it off cheaply. */
+  reviewRequired: z.boolean().default(true),
+});
+
+/* §4.16 Risk index policy ------------------------------------------------ */
+export const RiskIndexComponentSchema = z.object({
+  code: z.string().min(1),
+  weight: z.number().min(0),
+  /**
+   * What "no data" means for this component. Redistributing the weight onto
+   * whatever data does exist is never the default: that is exactly how a
+   * counterparty with its entire balance past due and no cleared history once
+   * scored well off a two-year-old balance sheet.
+   */
+  absenceRule: z.enum(['no_information', 'treat_as_worst', 'block_score']).default('no_information'),
+  enabled: z.boolean().default(true),
+});
+
+export const RiskIndexPolicySchema = z.object({
+  components: z.array(RiskIndexComponentSchema).default([]),
+  scale: z.enum(['score', 'grade', 'both']).default('both'),
+  recalcTriggers: z
+    .array(z.string())
+    .default(['returned_cheque', 'legal_event', 'limit_change', 'import_applied']),
+  scoreHistoryRetentionDays: z.number().int().positive().default(1095),
+  actionMap: z
+    .array(z.object({ gradeCode: z.string(), action: z.string() }))
+    .default([]),
+  /** Below this many scored components the index is shown as incomplete. */
+  minComponentsForConfidence: z.number().int().positive().default(3),
+});
+
 export const TenantProfileSchema = z.object({
   schemaVersion: z.literal(1),
   identity: IdentitySchema,
@@ -204,6 +400,13 @@ export const TenantProfileSchema = z.object({
   notification: NotificationPolicySchema,
   branding: BrandingSchema,
   governance: GovernanceSchema,
+  // §4.12–4.16. Defaulted so a profile stored before these sections existed
+  // still validates instead of locking an organisation out of its own editor.
+  collectionPolicy: CollectionPolicySchema.default({}),
+  lateChargePolicy: LateChargePolicySchema.default({}),
+  paymentPolicy: PaymentPolicySchema.default({}),
+  legalScreening: LegalScreeningPolicySchema.default({}),
+  riskIndex: RiskIndexPolicySchema.default({}),
   effectiveFrom: isoDate,
 });
 
@@ -212,6 +415,13 @@ export type RiskGrade = z.infer<typeof RiskGradeSchema>;
 export type AgingBucket = z.infer<typeof AgingBucketSchema>;
 export type FieldMapping = z.infer<typeof FieldMappingSchema>;
 export type TenantRole = z.infer<typeof RoleSchema>;
+export type CollectionPolicy = z.infer<typeof CollectionPolicySchema>;
+export type LateChargePolicy = z.infer<typeof LateChargePolicySchema>;
+export type LateChargeRate = z.infer<typeof LateChargeRateSchema>;
+export type PaymentPolicy = z.infer<typeof PaymentPolicySchema>;
+export type LegalScreeningPolicy = z.infer<typeof LegalScreeningPolicySchema>;
+export type RiskIndexPolicy = z.infer<typeof RiskIndexPolicySchema>;
+export type RiskIndexComponentConfig = z.infer<typeof RiskIndexComponentSchema>;
 
 export interface ProfileValidationIssue {
   path: string;

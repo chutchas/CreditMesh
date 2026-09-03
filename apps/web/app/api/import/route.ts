@@ -12,6 +12,7 @@ import {
   applyPartyRows,
   applyRegistryProfileRows,
   applyShareholderRows,
+  applyLegalEventRows,
   applyOrderBlockRows,
   applySupplierCommitmentRows,
   type ApplyContext,
@@ -124,6 +125,9 @@ export async function POST(request: Request) {
       break;
     case 'order_block':
       apply = await applyOrderBlockRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'legal_event':
+      apply = await applyLegalEventRows(ctx, result.rows, session.profile.legalScreening);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

@@ -1,0 +1,7 @@
+subject_type,subject_name,tax_id,event_type,case_no,source,court,event_date,published_date,detail
+party,Harbour Chemicals Co Ltd,0107537000122,rehabilitation,ฟฟ 12/2569,led,ศาลล้มละลายกลาง,15/07/2026,22/07/2026,คำสั่งรับคำร้องขอฟื้นฟูกิจการ
+party,Bluewater Logistics Public Company Limited,0105558000138,legal_execution,ผ 884/2568,led,กรมบังคับคดี,03/11/2025,10/11/2025,ยึดทรัพย์ตามคำพิพากษา
+party,Siam Metalwork Company Limited,,litigation,พ 4471/2569,court,ศาลแพ่ง,20/06/2026,28/06/2026,คดีผิดสัญญาซื้อขาย ทุนทรัพย์ 3.2 ล้านบาท
+person,สมชาย รัตนวงศ์,3101200456789,bankruptcy,ล 221/2569,led,ศาลล้มละลายกลาง,08/05/2026,15/05/2026,คำสั่งพิทักษ์ทรัพย์เด็ดขาด
+party,Andaman Freight Co Ltd,0105562000112,status_change,DBD-2569-00881,dbd,กรมพัฒนาธุรกิจการค้า,01/08/2026,01/08/2026,เปลี่ยนแปลงกรรมการผู้มีอำนาจลงนาม
+party,Northgate Steel Trading Company Limited,0105536000021,litigation,พ 1180/2569,court,ศาลแพ่งกรุงเทพใต้,12/04/2026,19/04/2026,คดีเรียกค่าเสียหาย ทุนทรัพย์ 850,000 บาท

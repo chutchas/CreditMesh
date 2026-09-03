@@ -38,6 +38,7 @@ export default async function LocaleLayout({
       items: [
         { href: `/${locale}/collateral`, label: t.nav.collateral },
         { href: `/${locale}/suppliers`, label: t.nav.suppliers },
+        { href: `/${locale}/legal`, label: t.nav.legal },
       ],
     },
     {

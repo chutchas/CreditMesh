@@ -19,9 +19,25 @@ export interface Dictionary {
   >;
   nav: Record<
     'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'orders' | 'simulator'
-    | 'import' | 'admin',
+    | 'legal' | 'import' | 'admin',
     string
   >;
+  legal: Record<
+    'title' | 'subtitle' | 'matchRuleNote' | 'noData' | 'noDataHint' | 'pendingReview'
+    | 'criticalParties' | 'confirmedEvents' | 'screeningDue' | 'oldest' | 'daysShort'
+    | 'reviewQueue' | 'confirmedRegister' | 'naturalPerson' | 'caseNo' | 'linkedTo' | 'party'
+    | 'eventType' | 'eventDate' | 'matchBasis' | 'source' | 'grade' | 'everyDays' | 'lastScreened'
+    | 'neverScreened' | 'overdueBy' | 'screeningDueTitle' | 'screeningDueNote' | 'confirm' | 'reject'
+    | 'saving' | 'chooseParty' | 'choosePartyRequired' | 'reviewNote' | 'noCandidates'
+    | 'personDataNote',
+    string
+  >;
+  legalTypes: Record<
+    'bankruptcy' | 'rehabilitation' | 'legal_execution' | 'litigation' | 'dissolution'
+    | 'liquidation' | 'status_change',
+    string
+  >;
+  legalBasis: Record<'tax_id' | 'registration_no' | 'name_only' | 'unmatched', string>;
   navSection: Record<'understand' | 'protect' | 'decide' | 'operate' | 'setup', string>;
   orders: Record<
     'title' | 'subtitle' | 'readOnlyNote' | 'noData' | 'noDataHint' | 'blockedCount' | 'blockedValue'
@@ -153,6 +169,7 @@ const th: Dictionary = {
     orders: 'ออเดอร์ที่ถูกระงับ',
     collateral: 'หลักประกัน',
     simulator: 'จำลองเทอมเครดิต',
+    legal: 'สถานะทางกฎหมาย',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
   },
@@ -162,6 +179,62 @@ const th: Dictionary = {
     decide: 'ตัดสินใจ',
     operate: 'ปฏิบัติการ',
     setup: 'ตั้งค่า',
+  },
+  legal: {
+    title: 'สถานะทางกฎหมายและล้มละลาย',
+    subtitle: 'คัดกรองต่อเนื่องทั้งพอร์ต แทนการเปิดเว็บค้นทีละรายเมื่อนึกได้',
+    matchRuleNote:
+      'ผลค้นจะผูกกับคู่สัญญาก็ต่อเมื่อเลขนิติบุคคลหรือเลขทะเบียนตรงกันเท่านั้น ชื่อที่คล้ายกันแค่ไหนก็ไม่ถือเป็นการจับคู่ — จะเข้าคิวให้คนตรวจพร้อมรายชื่อที่ใกล้เคียง เพราะการจับคู่ผิดคนในเรื่องนี้เสียหายกว่าการไม่รู้',
+    noData: 'ยังไม่มีผลการคัดกรอง',
+    noDataHint: 'อัปโหลดชุดข้อมูล “ผลค้นสถานะทางกฎหมาย” ที่หน้านำเข้าข้อมูล',
+    pendingReview: 'รอตรวจสอบ',
+    criticalParties: 'คู่สัญญาที่มีเหตุร้ายแรง',
+    confirmedEvents: 'ยืนยันแล้ว',
+    screeningDue: 'ถึงรอบคัดกรอง',
+    oldest: 'เกินมานานสุด',
+    daysShort: ' วัน',
+    reviewQueue: 'คิวรอตรวจสอบ',
+    confirmedRegister: 'ทะเบียนเหตุการณ์ที่ยืนยันแล้ว',
+    naturalPerson: 'บุคคลธรรมดา',
+    caseNo: 'เลขคดี',
+    linkedTo: 'ผูกกับ',
+    party: 'คู่สัญญา',
+    eventType: 'ประเภท',
+    eventDate: 'วันที่',
+    matchBasis: 'จับคู่จาก',
+    source: 'แหล่งข้อมูล',
+    grade: 'เกรด',
+    everyDays: 'รอบ (วัน)',
+    lastScreened: 'คัดกรองล่าสุด',
+    neverScreened: 'ยังไม่เคยคัดกรอง',
+    overdueBy: 'เกินมา',
+    screeningDueTitle: 'ถึงรอบคัดกรองแล้ว',
+    screeningDueNote:
+      'รอบคัดกรองมาจากเกรดใน Tenant Profile — เกรดแย่ถูกดูบ่อยขึ้น รายที่ยังไม่เคยคัดกรองถือว่าถึงรอบทันที ไม่ใช่ “อีก 180 วันจากวันที่เราไม่มี”',
+    confirm: 'ยืนยัน',
+    reject: 'ไม่ใช่รายนี้',
+    saving: 'กำลังบันทึก…',
+    chooseParty: 'เลือกคู่สัญญาที่ตรงกับผลค้นนี้',
+    choosePartyRequired: 'ต้องเลือกคู่สัญญาก่อนยืนยัน',
+    reviewNote: 'บันทึกเหตุผล (ถ้ามี)',
+    noCandidates: 'ไม่พบชื่อที่ใกล้เคียงในทะเบียน',
+    personDataNote:
+      'ข้อมูลบุคคลธรรมดาเก็บเลขประจำตัวเพียงบางส่วนตามนโยบายใน Profile ข้อ 4.15 และแสดงเป็น “รายการที่ต้องตรวจสอบ” ไม่ใช่ข้อสรุป การปฏิเสธผลค้นไม่ได้ลบทิ้ง แต่บันทึกไว้เพื่อไม่ให้ผลเดิมเด้งขึ้นมาอีกและเพื่อให้ตรวจย้อนได้',
+  },
+  legalTypes: {
+    bankruptcy: 'ล้มละลาย',
+    rehabilitation: 'ฟื้นฟูกิจการ',
+    legal_execution: 'บังคับคดี',
+    litigation: 'คดีความ',
+    dissolution: 'เลิกกิจการ',
+    liquidation: 'ชำระบัญชี',
+    status_change: 'เปลี่ยนสถานะนิติบุคคล',
+  },
+  legalBasis: {
+    tax_id: 'เลขนิติบุคคล',
+    registration_no: 'เลขทะเบียน',
+    name_only: 'คนยืนยันเอง',
+    unmatched: 'ยังไม่ผูก',
   },
   orders: {
     title: 'ออเดอร์ที่ถูกระงับ',
@@ -528,6 +601,7 @@ const en: Dictionary = {
     orders: 'Held orders',
     collateral: 'Collateral',
     simulator: 'Term simulator',
+    legal: 'Legal & insolvency',
     import: 'Import',
     admin: 'Tenant profile',
   },
@@ -537,6 +611,62 @@ const en: Dictionary = {
     decide: 'Decide',
     operate: 'Operate',
     setup: 'Setup',
+  },
+  legal: {
+    title: 'Legal & insolvency',
+    subtitle: 'Continuous screening across the portfolio, instead of searching one name when somebody remembers to',
+    matchRuleNote:
+      'A result attaches to a counterparty only when a taxpayer or registration number agrees. However close the names, a name is not a match — it goes to the review queue with its near-matches, because matching the wrong company or person here does more damage than not knowing.',
+    noData: 'No screening results yet',
+    noDataHint: 'Upload the "Legal & insolvency search results" dataset on the import screen',
+    pendingReview: 'Awaiting review',
+    criticalParties: 'Counterparties with critical events',
+    confirmedEvents: 'Confirmed',
+    screeningDue: 'Due for screening',
+    oldest: 'oldest',
+    daysShort: 'd',
+    reviewQueue: 'Review queue',
+    confirmedRegister: 'Confirmed events',
+    naturalPerson: 'natural person',
+    caseNo: 'Case',
+    linkedTo: 'linked to',
+    party: 'Counterparty',
+    eventType: 'Type',
+    eventDate: 'Date',
+    matchBasis: 'Matched on',
+    source: 'Source',
+    grade: 'Grade',
+    everyDays: 'Every (days)',
+    lastScreened: 'Last screened',
+    neverScreened: 'never screened',
+    overdueBy: 'Overdue by',
+    screeningDueTitle: 'Due for screening',
+    screeningDueNote:
+      'Frequency comes from the grade bands in the Tenant Profile — worse grades are looked at more often. A counterparty never screened is due now, not "due in 180 days from a date we do not have".',
+    confirm: 'Confirm',
+    reject: 'Not this one',
+    saving: 'Saving…',
+    chooseParty: 'Choose the counterparty this result belongs to',
+    choosePartyRequired: 'Choose a counterparty before confirming',
+    reviewNote: 'Note (optional)',
+    noCandidates: 'No similar name in the register',
+    personDataNote:
+      'For natural persons only part of the identifier is stored, per §4.15 of the profile, and results are presented as items to check rather than conclusions. Rejecting a result does not delete it: the record stays so the same false positive is not re-raised and the decision remains auditable.',
+  },
+  legalTypes: {
+    bankruptcy: 'Bankruptcy',
+    rehabilitation: 'Business rehabilitation',
+    legal_execution: 'Legal execution',
+    litigation: 'Litigation',
+    dissolution: 'Dissolution',
+    liquidation: 'Liquidation',
+    status_change: 'Registry status change',
+  },
+  legalBasis: {
+    tax_id: 'Taxpayer id',
+    registration_no: 'Registration no',
+    name_only: 'Linked by a reviewer',
+    unmatched: 'Not linked',
   },
   orders: {
     title: 'Held orders',

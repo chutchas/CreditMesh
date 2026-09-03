@@ -3,11 +3,16 @@ import 'server-only';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { ImportedRow } from '@creditmesh/adapters';
 import {
+  matchLegalResult,
+  maskPersonIdentifier,
   normalizeAddress,
   normalizePersonName,
   normalizeTaxId,
   resolveParties,
+  type LegalScreeningPolicy,
+  type LegalSearchResult,
   type PartySourceRow,
+  type ScreeningParty,
 } from '@creditmesh/core';
 
 /**
@@ -761,4 +766,120 @@ export async function applyOrderBlockRows(
   }
 
   return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped, notes: log.notes, failed: log.failed };
+}
+
+/* ------------------------------------------------------------------ */
+/* Legal & insolvency search results — Module 16                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turns uploaded search results into review items.
+ *
+ * The one thing this writer must not do is link a result to a counterparty on
+ * a name. It calls the engine, stores whatever basis the engine used, and
+ * leaves `party_id` null when no identifier agreed — the reviewer decides.
+ * Everything lands as `review_status = 'pending'`; nothing downstream may treat
+ * a legal event as a fact about a company until a person has said so.
+ */
+export async function applyLegalEventRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  policy: LegalScreeningPolicy,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+
+  const [{ data: partyRows, error }, { data: identifierRows }] = await Promise.all([
+    ctx.admin.from('party').select('id, legal_name, tax_id').eq('tenant_id', ctx.tenantId).neq('status', 'merged'),
+    // Registration numbers live in party_identifier, not on party — §6 is
+    // explicit that a counterparty holds a different number in every register.
+    ctx.admin.from('party_identifier').select('party_id, value').eq('tenant_id', ctx.tenantId).eq('kind', 'registration_no'),
+  ]);
+  log.check('reading the counterparty register', error);
+
+  const registrationByParty = new Map((identifierRows ?? []).map((r) => [r.party_id as string, r.value as string]));
+  const parties: ScreeningParty[] = (partyRows ?? []).map((p) => ({
+    partyId: p.id as string,
+    legalName: p.legal_name as string,
+    taxId: (p.tax_id as string | null) ?? null,
+    registrationNo: registrationByParty.get(p.id as string) ?? null,
+  }));
+
+  const payload: Record<string, unknown>[] = [];
+  const screenedPartyIds = new Set<string>();
+  let unmatched = 0;
+
+  for (const r of rows) {
+    const result: LegalSearchResult = {
+      caseNo: String(r.caseNo),
+      source: String(r.source),
+      eventType: String(r.eventType) as LegalSearchResult['eventType'],
+      subjectType: (r.subjectType === 'person' ? 'person' : 'party'),
+      subjectName: String(r.subjectName),
+      subjectIdentifier: r.subjectIdentifier === undefined ? null : String(r.subjectIdentifier ?? '') || null,
+      eventDate: r.eventDate === undefined ? null : (r.eventDate as string | null),
+      publishedDate: r.publishedDate === undefined ? null : (r.publishedDate as string | null),
+      court: r.court === undefined ? null : (r.court as string | null),
+      detail: r.detail === undefined ? null : (r.detail as string | null),
+    };
+
+    const matched = matchLegalResult(result, parties, policy);
+    if (matched.partyId) screenedPartyIds.add(matched.partyId);
+    else unmatched += 1;
+
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: matched.partyId,
+      subject_type: result.subjectType,
+      subject_name: result.subjectName,
+      // Masked on the way in. The full identifier is never written, for a
+      // company or a person — §4.15 person_data_policy.
+      subject_id_masked: maskPersonIdentifier(
+        result.subjectIdentifier,
+        result.subjectType === 'person' ? policy.personIdStorage : 'last4',
+      ),
+      event_type: result.eventType,
+      severity: matched.severity,
+      case_no: result.caseNo,
+      source: result.source,
+      court: result.court,
+      event_date: result.eventDate,
+      published_date: result.publishedDate,
+      detail: result.detail,
+      match_basis: matched.matchBasis,
+      match_note: matched.matchNote,
+      candidates: matched.nameCandidates,
+      review_status: 'pending',
+      retrieved_at: new Date().toISOString(),
+    });
+  }
+
+  if (unmatched > 0) {
+    log.note(
+      `${unmatched} result(s) could not be attached to a counterparty by identifier — they are in the review queue with their near-matches, and a name alone is never treated as a match`,
+    );
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error: writeError } = await ctx.admin
+      .from('legal_event')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,source,case_no,event_type,subject_name' });
+    log.check('writing legal events', writeError);
+  }
+
+  // A screening that found nothing about a counterparty is still a screening,
+  // and only this record can say when it happened.
+  const now = new Date().toISOString();
+  const runs = [...screenedPartyIds].map((partyId) => ({
+    tenant_id: ctx.tenantId,
+    party_id: partyId,
+    source: String(rows[0]?.source ?? 'manual_upload'),
+    screened_at: now,
+    results_found: payload.filter((p) => p.party_id === partyId).length,
+  }));
+  if (runs.length > 0) {
+    const { error: runError } = await ctx.admin.from('legal_screening_run').insert(runs);
+    log.check('recording the screening run', runError);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped: 0, notes: log.notes, failed: log.failed };
 }
