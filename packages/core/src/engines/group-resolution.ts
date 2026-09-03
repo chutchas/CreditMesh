@@ -389,13 +389,51 @@ export function resolveGroups(
       })),
     );
 
-    const largest = memberPartyIds
-      .map((id) => partyById.get(id)?.legalName ?? id)
-      .sort((a, b) => a.length - b.length)[0]!;
+    // Name the group after its most connected member. Sorting by name length —
+    // which this did until it reached a real portfolio — names a three-company
+    // group after whichever member happens to have the shortest name, and that
+    // was the member joined by the weakest edge. A reviewer reading the list
+    // should see the company the group actually revolves around.
+    const centrality = new Map<string, { edges: number; weight: number }>();
+    for (const edge of groupEdges) {
+      for (const id of [edge.leftPartyId, edge.rightPartyId]) {
+        const current = centrality.get(id) ?? { edges: 0, weight: 0 };
+        centrality.set(id, { edges: current.edges + 1, weight: current.weight + edge.confidence });
+      }
+    }
+    // When every member is connected to every other, centrality cannot pick a
+    // hub. Fall back to the member whose name it shares with the most others:
+    // corporate groups usually carry a family name, and naming the group after
+    // the one member that shares nothing is the worst available answer.
+    const sharedNameScore = (id: string): number => {
+      const own = new Set(
+        normalizeName(partyById.get(id)?.legalName ?? '')
+          .split(' ')
+          .filter((token) => token.length > 2),
+      );
+      if (own.size === 0) return 0;
+      return memberPartyIds.filter((other) => {
+        if (other === id) return false;
+        return normalizeName(partyById.get(other)?.legalName ?? '')
+          .split(' ')
+          .some((token) => token.length > 2 && own.has(token));
+      }).length;
+    };
+
+    const hub = [...memberPartyIds].sort((a, b) => {
+      const ca = centrality.get(a) ?? { edges: 0, weight: 0 };
+      const cb = centrality.get(b) ?? { edges: 0, weight: 0 };
+      if (cb.edges !== ca.edges) return cb.edges - ca.edges;
+      if (cb.weight !== ca.weight) return cb.weight - ca.weight;
+      const sa = sharedNameScore(a);
+      const sb = sharedNameScore(b);
+      if (sb !== sa) return sb - sa;
+      return (partyById.get(a)?.legalName ?? a).length - (partyById.get(b)?.legalName ?? b).length;
+    })[0]!;
 
     groups.push({
       key: memberPartyIds.join('|'),
-      suggestedName: largest,
+      suggestedName: partyById.get(hub)?.legalName ?? hub,
       memberPartyIds,
       confidence,
       edges: groupEdges,

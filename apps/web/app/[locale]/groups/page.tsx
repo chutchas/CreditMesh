@@ -103,7 +103,19 @@ export default async function GroupsPage({ params }: { params: Promise<{ locale:
       <PageHeader
         title={t.groups.title}
         subtitle={t.groups.subtitle}
-        actions={canDecide ? <RunGroupsButton labels={{ run: t.groups.run, running: t.groups.running }} /> : null}
+        actions={
+          canDecide ? (
+            <RunGroupsButton
+              labels={{
+                run: t.groups.run,
+                running: t.groups.running,
+                groupsProposed: t.groups.groupsProposed,
+                edgesFound: t.groups.edgesFound,
+                hubsIgnored: t.groups.hubsIgnored,
+              }}
+            />
+          ) : null
+        }
       />
 
       <p className="mb-4 rounded border border-[#fbe3a4] bg-[#fffaeb] px-3 py-2 text-xs text-[#b54708]">

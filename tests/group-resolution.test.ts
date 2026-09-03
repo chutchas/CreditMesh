@@ -185,6 +185,47 @@ describe('resolveGroups', () => {
     expect(evidence[0]!.observedAt).toBe('2026-09-03T00:00:00Z');
   });
 
+  it('names a group after its most connected member, not its shortest name', () => {
+    // Regression: naming by name length labelled a three-company group after
+    // the member joined by its weakest edge. A reviewer scanning the list
+    // should see the company the group revolves around.
+    const result = resolveGroups(
+      [party('1', 'Northgate Steel Trading Company Limited'), party('2', 'Northgate Holdings'), party('3', 'Siam Metalwork')],
+      [
+        // A star, not a triangle: party 1 is the only member joined to both.
+        shareholder('p1', 'Owner One', '1'),
+        shareholder('p1', 'Owner One', '2'),
+        director('p2', 'Director Two', '1'),
+        director('p2', 'Director Two', '3'),
+      ],
+      [],
+      profile,
+      asOf,
+    );
+
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0]!.suggestedName).toBe('Northgate Steel Trading Company Limited');
+  });
+
+  it('falls back to the shared family name when no member is more central', () => {
+    // A complete graph has no hub, so the tie-break matters. Naming the group
+    // after the one member that shares nothing with the others is the worst
+    // available answer, and it is what sorting by name length produced.
+    const result = resolveGroups(
+      [party('1', 'Northgate Steel Trading Company Limited'), party('2', 'Northgate Holdings'), party('3', 'Siam Metalwork')],
+      [
+        shareholder('p1', 'Owner One', '1'),
+        shareholder('p1', 'Owner One', '2'),
+        shareholder('p1', 'Owner One', '3'),
+      ],
+      [],
+      profile,
+      asOf,
+    );
+
+    expect(result.groups[0]!.suggestedName).toMatch(/^Northgate/);
+  });
+
   it('leaves unconnected counterparties out entirely', () => {
     const result = resolveGroups([party('1', 'Alpha'), party('2', 'Beta'), party('3', 'Lonely')], [], [], profile, asOf);
     expect(result.groups).toHaveLength(0);

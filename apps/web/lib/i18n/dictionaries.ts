@@ -23,7 +23,8 @@ export interface Dictionary {
     | 'entities' | 'exposure' | 'overdue' | 'limit' | 'confidence' | 'evidence' | 'confirm'
     | 'reject' | 'groupName' | 'noProposals' | 'noProposalsHint' | 'weakestLink' | 'exclusions'
     | 'exclusionsHint' | 'personHub' | 'addressHub' | 'appearsIn' | 'ignoredAlready'
-    | 'neverAutomatic' | 'lastRun' | 'edgesFound' | 'belowThreshold' | 'confirmPrompt',
+    | 'neverAutomatic' | 'lastRun' | 'edgesFound' | 'belowThreshold' | 'confirmPrompt'
+    | 'hubsIgnored' | 'groupsProposed',
     string
   >;
   dashboard: Record<
@@ -136,6 +137,8 @@ const th: Dictionary = {
     edgesFound: 'เส้นเชื่อมที่พบ',
     belowThreshold: 'ต่ำกว่าเกณฑ์ ไม่แสดง',
     confirmPrompt: 'ยืนยันว่าคู่สัญญาเหล่านี้เป็นกลุ่มทุนเดียวกัน?',
+    hubsIgnored: 'ฮับที่ข้าม',
+    groupsProposed: 'กลุ่มที่เสนอ',
   },
   dashboard: {
     title: 'ภาพรวมพอร์ต',
@@ -336,6 +339,8 @@ const en: Dictionary = {
     edgesFound: 'Edges found',
     belowThreshold: 'below threshold, not shown',
     confirmPrompt: 'Confirm that these counterparties are one corporate group?',
+    hubsIgnored: 'hubs ignored',
+    groupsProposed: 'proposed',
   },
   dashboard: {
     title: 'Portfolio overview',
