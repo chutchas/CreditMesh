@@ -1,0 +1,7 @@
+# One organisation, BU, segment or brand name per line.
+# Add every customer name as it is onboarded: the check then fails the build if
+# that name ever reaches source instead of the tenant profile (Design principle P1).
+#
+# Example:
+# northwind holdings
+# NWH-BU-01

@@ -1,0 +1,5 @@
+entity,customer_code,credit_limit,currency,valid_from
+E01,C-1001,"4,000,000",THB,01/01/2026
+E02,K-4471,"3,000,000",THB,01/01/2026
+E01,C-1002,"1,500,000",THB,01/01/2026
+E02,K-4490,"6,000,000",THB,01/01/2026

@@ -1,0 +1,144 @@
+import { NextResponse } from 'next/server';
+import { importCsv, getDataset } from '@creditmesh/adapters';
+import { createAdminClient } from '../../../lib/supabase/admin';
+import { canWrite, getSession } from '../../../lib/session';
+import {
+  applyArItemRows,
+  applyCreditLimitRows,
+  applyFinancialStatementRows,
+  applyPartyRows,
+  type ApplyContext,
+} from '../../../lib/ingest';
+
+export const runtime = 'nodejs';
+// Files can be tens of thousands of rows; the default budget is not enough.
+export const maxDuration = 60;
+
+/**
+ * One endpoint, two modes. `dryRun` validates and returns the report without
+ * touching the database, which is what the screen shows before the user commits
+ * — §10 step 4 makes reconciliation an acceptance condition, and that is only
+ * possible if people can see what a file will do before it does it.
+ */
+export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'not signed in' }, { status: 401 });
+  if (!canWrite(session)) return NextResponse.json({ error: 'not permitted' }, { status: 403 });
+
+  const form = await request.formData();
+  const file = form.get('file');
+  const datasetId = String(form.get('datasetId') ?? '');
+  const dryRun = String(form.get('dryRun') ?? 'true') === 'true';
+  const dataAsOf = (form.get('dataAsOf') as string | null) || null;
+
+  if (!(file instanceof File)) return NextResponse.json({ error: 'file is required' }, { status: 400 });
+  if (!getDataset(datasetId)) return NextResponse.json({ error: `unknown dataset "${datasetId}"` }, { status: 400 });
+
+  const text = await file.text();
+  const baseCurrency = session.profile.identity.baseCurrency;
+  const result = importCsv(text, {
+    datasetId,
+    systemId: 'csv',
+    defaultCurrency: baseCurrency,
+    dataAsOf,
+  });
+
+  if (dryRun) {
+    return NextResponse.json({
+      report: result.report,
+      preview: result.rows.slice(0, 20),
+      applied: false,
+    });
+  }
+
+  if (result.rows.length === 0) {
+    return NextResponse.json({ report: result.report, applied: false, notes: ['nothing to apply'] });
+  }
+
+  const admin = createAdminClient();
+  const { data: batch } = await admin
+    .from('import_batch')
+    .insert({
+      tenant_id: session.tenantId,
+      system_id: 'csv',
+      dataset_id: datasetId,
+      file_name: file.name,
+      status: 'validating',
+      rows_read: result.report.rowsRead,
+      rows_accepted: result.report.rowsAccepted,
+      rows_rejected: result.report.rowsRejected,
+      data_as_of: dataAsOf,
+      errors: result.report.errors,
+      warnings: result.report.warnings,
+      uploaded_by: session.userId,
+    })
+    .select('id')
+    .single();
+
+  const ctx: ApplyContext = {
+    admin,
+    tenantId: session.tenantId,
+    systemId: 'csv',
+    actorId: session.userId,
+    dataAsOf,
+  };
+
+  let apply;
+  switch (datasetId) {
+    case 'party':
+      apply = await applyPartyRows(ctx, result.rows);
+      break;
+    case 'ar_item':
+      apply = await applyArItemRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'credit_limit':
+      apply = await applyCreditLimitRows(ctx, result.rows, baseCurrency);
+      break;
+    case 'financial_statement':
+      apply = await applyFinancialStatementRows(ctx, result.rows, baseCurrency);
+      break;
+    default:
+      return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });
+  }
+
+  const now = new Date().toISOString();
+  await admin
+    .from('import_batch')
+    .update({ status: 'applied', finished_at: now, warnings: [...result.report.warnings, ...apply.notes] })
+    .eq('id', batch?.id ?? '');
+
+  // Freshness is recorded per dataset so every screen can say how old its
+  // inputs are, and warn when they are older than the threshold.
+  await admin.from('dataset_freshness').upsert(
+    {
+      tenant_id: session.tenantId,
+      system_id: 'csv',
+      dataset_id: datasetId,
+      last_success_at: now,
+      last_attempt_at: now,
+      data_as_of: dataAsOf,
+      last_error: null,
+    },
+    { onConflict: 'tenant_id,system_id,dataset_id' },
+  );
+
+  await admin.from('audit_log').insert({
+    tenant_id: session.tenantId,
+    actor: session.userId,
+    actor_label: session.email,
+    action: 'import.apply',
+    object_type: 'import_batch',
+    object_id: batch?.id ?? datasetId,
+    snapshot: {
+      datasetId,
+      fileName: file.name,
+      rowsRead: result.report.rowsRead,
+      rowsAccepted: result.report.rowsAccepted,
+      rowsRejected: result.report.rowsRejected,
+      dataAsOf,
+      ...apply,
+    },
+  });
+
+  return NextResponse.json({ report: result.report, applied: true, ...apply });
+}

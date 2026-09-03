@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/* Numbers are the product. Tabular figures keep columns of money aligned so a
+   long list can be scanned down rather than read across. */
+@theme {
+  --font-sans: 'IBM Plex Sans Thai', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #14202e;
+  --color-muted: #5b6b7c;
+  --color-line: #dfe5ec;
+  --color-surface: #ffffff;
+  --color-canvas: #f6f8fa;
+  --color-brand: #1f4e79;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
