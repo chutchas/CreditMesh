@@ -4,13 +4,18 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { ImportedRow } from '@creditmesh/adapters';
 import {
   matchLegalResult,
+  matchPayments,
   maskPersonIdentifier,
   normalizeAddress,
   normalizePersonName,
   normalizeTaxId,
   resolveParties,
+  type IncomingPayment,
   type LegalScreeningPolicy,
   type LegalSearchResult,
+  type OpenItem as PaymentOpenItem,
+  type PaymentGrain,
+  type PaymentPolicy,
   type PartySourceRow,
   type ScreeningParty,
 } from '@creditmesh/core';
@@ -879,6 +884,240 @@ export async function applyLegalEventRows(
   if (runs.length > 0) {
     const { error: runError } = await ctx.admin.from('legal_screening_run').insert(runs);
     log.check('recording the screening run', runError);
+  }
+
+  return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped: 0, notes: log.notes, failed: log.failed };
+}
+
+/* ------------------------------------------------------------------ */
+/* Incoming payments — Module 13                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Loads receipts and applies them to open items.
+ *
+ * A receipt with no recognised customer code is written anyway, with a null
+ * party and status `unidentified`. That is §4.14's unidentified receipt: money
+ * that has arrived and belongs to nobody yet, with its own SLA. Dropping the
+ * row, or attaching it to a guessed counterparty, would both hide the one case
+ * this module exists to surface.
+ *
+ * Matching only runs where the source did not already do it. The grain is read
+ * from the file rather than assumed: if the invoice column is populated, the
+ * ERP has applied the receipt and we read that; otherwise we match under the
+ * tenant's rules and record which rule we used.
+ */
+export async function applyIncomingPaymentRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  baseCurrency: string,
+  policy: PaymentPolicy,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+
+  const payload: Record<string, unknown>[] = [];
+  let unidentified = 0;
+
+  for (const r of rows) {
+    const code = r.partySourceCode === undefined ? null : String(r.partySourceCode ?? '') || null;
+    const partyId = code
+      ? (index.bySourceCode.get(`${ctx.systemId}|${String(r.legalEntityCode)}|${code}`) ?? null)
+      : null;
+    if (!partyId) unidentified += 1;
+
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      legal_entity_code: String(r.legalEntityCode),
+      receipt_ref: String(r.receiptRef),
+      payment_date: r.paymentDate,
+      value_date: r.valueDate ?? null,
+      amount: r.amount,
+      currency: String(r.currency ?? baseCurrency),
+      channel: String(r.channel ?? 'bank_transfer'),
+      source_document_no: r.sourceDocumentNo ?? null,
+      payer_name: r.payerName ?? null,
+      reference: r.reference ?? null,
+      cheque_no: r.chequeNo ?? null,
+      cheque_due_date: r.chequeDueDate ?? null,
+      status: partyId ? 'open' : 'unidentified',
+      source_ref: `import:${ctx.systemId}:${r.__rowNumber}`,
+    });
+  }
+
+  if (unidentified > 0) {
+    log.note(
+      `${unidentified} receipt(s) carry no counterparty we recognise — they are recorded as unidentified rather than dropped or guessed, and the payments screen tracks them against the ${policy.unidentifiedReceiptSlaDays}-day SLA`,
+    );
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('incoming_payment')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,legal_entity_code,receipt_ref' });
+    log.check('writing incoming payments', error);
+  }
+  if (log.failed) {
+    return { inserted: 0, updated: 0, skipped: 0, notes: log.notes, failed: true };
+  }
+
+  /* Matching ---------------------------------------------------------- */
+  const refs = payload.map((p) => p.receipt_ref as string);
+  const [{ data: storedPayments }, { data: openItems }] = await Promise.all([
+    ctx.admin
+      .from('incoming_payment')
+      .select('id, party_id, legal_entity_code, receipt_ref, payment_date, amount, currency, channel, source_document_no, payer_name, reference')
+      .eq('tenant_id', ctx.tenantId)
+      .in('receipt_ref', refs),
+    ctx.admin
+      .from('ar_item')
+      .select('id, party_id, legal_entity_code, document_no, due_date, amount_base, base_currency')
+      .eq('tenant_id', ctx.tenantId)
+      .is('cleared_date', null),
+  ]);
+
+  const payments: IncomingPayment[] = (storedPayments ?? []).map((p) => ({
+    paymentId: p.id as string,
+    partyId: (p.party_id as string | null) ?? null,
+    legalEntityCode: p.legal_entity_code as string,
+    receiptRef: p.receipt_ref as string,
+    paymentDate: p.payment_date as string,
+    amount: Number(p.amount),
+    currency: p.currency as string,
+    channel: p.channel as string,
+    sourceDocumentNo: (p.source_document_no as string | null) ?? null,
+    payerName: (p.payer_name as string | null) ?? null,
+    reference: (p.reference as string | null) ?? null,
+  }));
+
+  const items: PaymentOpenItem[] = (openItems ?? []).map((i) => ({
+    arItemId: i.id as string,
+    partyId: i.party_id as string,
+    legalEntityCode: i.legal_entity_code as string,
+    documentNo: i.document_no as string,
+    dueDate: i.due_date as string,
+    amount: Number(i.amount_base),
+    currency: i.base_currency as string,
+  }));
+
+  // The grain is what this file actually contains, not what the adapter hopes
+  // for: a receipt export without an invoice column is receipt_header however
+  // capable the route is.
+  const grain: PaymentGrain = payments.some((p) => p.sourceDocumentNo) ? 'matched_to_invoice' : 'receipt_header';
+  const { applications, unmatched } = matchPayments(payments, items, policy, grain);
+
+  if (applications.length > 0) {
+    const appPayload = applications.map((a) => ({
+      tenant_id: ctx.tenantId,
+      payment_id: a.paymentId,
+      ar_item_id: a.arItemId,
+      applied_amount: a.appliedAmount,
+      match_rule: a.matchRule,
+      confidence: a.confidence,
+    }));
+    for (let i = 0; i < appPayload.length; i += 500) {
+      const { error } = await ctx.admin
+        .from('payment_application')
+        .upsert(appPayload.slice(i, i + 500), { onConflict: 'tenant_id,payment_id,ar_item_id' });
+      log.check('writing payment applications', error);
+    }
+
+    const matchedIds = [...new Set(applications.map((a) => a.paymentId))];
+    const { error: statusError } = await ctx.admin
+      .from('incoming_payment')
+      .update({ status: 'matched' })
+      .in('id', matchedIds);
+    log.check('marking receipts matched', statusError);
+  }
+
+  const ambiguous = unmatched.filter((u) => u.reason === 'ambiguous').length;
+  if (ambiguous > 0) {
+    log.note(
+      `${ambiguous} receipt(s) fit more than one open item equally well and were left unapplied — applying one would make the others look unpaid`,
+    );
+  }
+
+  // A receipt nobody can attribute is an exception in its own right, with an
+  // SLA attached. Recording it here is what puts it on Module 15's queue.
+  const unidentifiedRows = unmatched
+    .filter((u) => u.reason === 'no_party')
+    .map((u) => ({
+      tenant_id: ctx.tenantId,
+      party_id: null,
+      legal_entity_code: u.payment.legalEntityCode,
+      payment_id: u.payment.paymentId,
+      type: 'unidentified_receipt',
+      amount: u.payment.amount,
+      currency: u.payment.currency,
+      occurred_at: u.payment.paymentDate,
+      reason_text: u.note,
+      reference: u.payment.receiptRef,
+      source: 'erp',
+      status: 'open',
+    }));
+  if (unidentifiedRows.length > 0) {
+    const { error } = await ctx.admin
+      .from('payment_exception')
+      .upsert(unidentifiedRows, { onConflict: 'tenant_id,type,reference,occurred_at,legal_entity_code' });
+    log.check('recording unidentified receipts', error);
+  }
+
+  return {
+    inserted: log.failed ? 0 : payload.length,
+    updated: applications.length,
+    skipped: 0,
+    notes: log.notes,
+    failed: log.failed,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Payment exceptions and returned cheques — Module 15                  */
+/* ------------------------------------------------------------------ */
+
+export async function applyPaymentExceptionRows(
+  ctx: ApplyContext,
+  rows: ImportedRow[],
+  baseCurrency: string,
+): Promise<ApplyResult> {
+  const log = new WriteLog();
+  const index = await loadPartyIndex(ctx, log);
+  const payload: Record<string, unknown>[] = [];
+  let unattributed = 0;
+
+  for (const r of rows) {
+    const code = r.partySourceCode === undefined ? null : String(r.partySourceCode ?? '') || null;
+    const partyId = code
+      ? (index.bySourceCode.get(`${ctx.systemId}|${String(r.legalEntityCode)}|${code}`) ?? null)
+      : null;
+    if (!partyId) unattributed += 1;
+
+    payload.push({
+      tenant_id: ctx.tenantId,
+      party_id: partyId,
+      legal_entity_code: String(r.legalEntityCode),
+      type: String(r.type),
+      amount: r.amount ?? 0,
+      currency: String(r.currency ?? baseCurrency),
+      occurred_at: r.occurredAt,
+      reason_code: r.reasonCode ?? null,
+      reason_text: r.reasonText ?? null,
+      reference: String(r.reference),
+      source: String(r.source ?? 'manual_entry'),
+      status: r.status ?? 'open',
+    });
+  }
+
+  if (unattributed > 0) {
+    log.note(`${unattributed} exception(s) have no recognised counterparty — they are kept, but they raise no credit signal until someone attributes them`);
+  }
+
+  for (let i = 0; i < payload.length; i += 500) {
+    const { error } = await ctx.admin
+      .from('payment_exception')
+      .upsert(payload.slice(i, i + 500), { onConflict: 'tenant_id,type,reference,occurred_at,legal_entity_code' });
+    log.check('writing payment exceptions', error);
   }
 
   return { inserted: log.failed ? 0 : payload.length, updated: 0, skipped: 0, notes: log.notes, failed: log.failed };

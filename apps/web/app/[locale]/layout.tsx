@@ -49,6 +49,15 @@ export default async function LocaleLayout({
       ],
     },
     {
+      section: t.navSection.operate,
+      items: [
+        { href: `/${locale}/payments`, label: t.nav.payments },
+        { href: `/${locale}/exceptions`, label: t.nav.exceptions },
+        { href: `/${locale}/collection`, label: t.nav.collection },
+        { href: `/${locale}/late-charges`, label: t.nav.lateCharges },
+      ],
+    },
+    {
       section: t.navSection.setup,
       items: [
         { href: `/${locale}/import`, label: t.nav.import },

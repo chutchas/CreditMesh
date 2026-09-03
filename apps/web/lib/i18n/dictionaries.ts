@@ -19,7 +19,70 @@ export interface Dictionary {
   >;
   nav: Record<
     'dashboard' | 'portfolio' | 'groups' | 'suppliers' | 'collateral' | 'orders' | 'simulator'
-    | 'legal' | 'import' | 'admin',
+    | 'legal' | 'payments' | 'exceptions' | 'collection' | 'lateCharges' | 'import' | 'admin',
+    string
+  >;
+  collection: Record<
+    'title' | 'subtitle' | 'phaseNote' | 'noData' | 'noDataHint' | 'run' | 'running' | 'opened'
+    | 'closed' | 'toChase' | 'overdueTotal' | 'promisesDue' | 'promisesBroken' | 'keptRate'
+    | 'noPromiseHistory' | 'onHold' | 'neverContacted' | 'todaysQueue' | 'queueNote' | 'party'
+    | 'overdue' | 'open' | 'dpd' | 'suggestedStage' | 'currentStage' | 'why' | 'priority'
+    | 'manualOrder' | 'log' | 'held' | 'contacted' | 'daysShort' | 'promiseBroken'
+    | 'promiseDueToday' | 'logContact' | 'outcome' | 'note' | 'promiseAmount' | 'promiseDate'
+    | 'addPromise' | 'addDispute' | 'disputeReason' | 'save' | 'saving' | 'moveUp' | 'vsWatchlist',
+    string
+  >;
+  collectionStages: Record<
+    'reminder' | 'first_call' | 'formal_notice' | 'final_notice' | 'legal_notice',
+    string
+  >;
+  collectionActivity: Record<'call' | 'email' | 'letter' | 'visit' | 'note', string>;
+  lateCharges: Record<
+    'title' | 'subtitle' | 'scopeNote' | 'noRuns' | 'noRunsHint' | 'run' | 'running' | 'items'
+    | 'skipped' | 'proposed' | 'waivedTotal' | 'ofTotal' | 'asOf' | 'policyVersion'
+    | 'policyVersionHint' | 'proposedCharges' | 'inputsNote' | 'party' | 'document' | 'principal'
+    | 'rate' | 'since' | 'lateDays' | 'afterGrace' | 'daysShort' | 'charge' | 'action' | 'waive'
+    | 'waived' | 'waiverReason' | 'waiverReasonRequired' | 'saving' | 'waiverReport'
+    | 'waiverReportNote' | 'waivers' | 'waivedAmount' | 'runHistory' | 'policyUsed',
+    string
+  > & { runStatus: Record<'draft' | 'approved' | 'issued', string> };
+  payments: Record<
+    'title' | 'subtitle' | 'scopeNote' | 'noData' | 'noDataHint' | 'received' | 'receipts' | 'applied'
+    | 'unidentified' | 'slaBreaches' | 'slaHint' | 'daysShort' | 'needsAttention' | 'ambiguityNote'
+    | 'receipt' | 'from' | 'amount' | 'reason' | 'candidates' | 'unknownPayer' | 'expectedCash'
+    | 'expectedCashNote' | 'window' | 'items' | 'byChannel' | 'channel',
+    string
+  >;
+  paymentReasons: Record<
+    'no_party' | 'no_open_item' | 'ambiguous' | 'outside_tolerance' | 'over_applied',
+    string
+  >;
+  paymentChannels: Record<
+    'cheque' | 'bill_of_exchange' | 'bank_transfer' | 'bill_payment' | 'barcode' | 'e_payment'
+    | 'direct_debit' | 'cash' | 'other',
+    string
+  >;
+  cashBuckets: Record<'overdue' | 'this_week' | 'next_week' | 'd15_30' | 'beyond_30', string>;
+  exceptions: Record<
+    'title' | 'subtitle' | 'signalNote' | 'noData' | 'noDataHint' | 'open' | 'slaBreaches' | 'oldest'
+    | 'daysShort' | 'unidentifiedMoney' | 'partiesSignalled' | 'signalsRaised' | 'noAutoBlockNote'
+    | 'goesTo' | 'queue' | 'type' | 'party' | 'noParty' | 'reference' | 'amount' | 'occurred'
+    | 'source' | 'action' | 'resolve' | 'writeOff' | 'note' | 'saving' | 'chequeHistory'
+    | 'chequeHistoryNote' | 'returns' | 'latest',
+    string
+  >;
+  exceptionTypes: Record<
+    'returned_cheque' | 'reversal' | 'mismatch' | 'missing' | 'failed_transfer' | 'overpayment'
+    | 'unidentified_receipt',
+    string
+  >;
+  exceptionSources: Record<'bank' | 'erp' | 'manual_entry', string>;
+  signalTargets: Record<
+    'risk_index' | 'watchlist' | 'credit_review' | 'order_review' | 'collection_escalation',
+    string
+  >;
+  signalCodes: Record<
+    'repeated_returned_cheque' | 'returned_cheque' | 'repeated_payment_failure' | 'unresolved_exception',
     string
   >;
   legal: Record<
@@ -170,6 +233,10 @@ const th: Dictionary = {
     collateral: 'หลักประกัน',
     simulator: 'จำลองเทอมเครดิต',
     legal: 'สถานะทางกฎหมาย',
+    payments: 'การรับชำระ',
+    exceptions: 'รายการผิดปกติ',
+    collection: 'คิวตามหนี้',
+    lateCharges: 'ค่าปรับล่าช้า',
     import: 'นำเข้าข้อมูล',
     admin: 'ตั้งค่าองค์กร',
   },
@@ -179,6 +246,238 @@ const th: Dictionary = {
     decide: 'ตัดสินใจ',
     operate: 'ปฏิบัติการ',
     setup: 'ตั้งค่า',
+  },
+  payments: {
+    title: 'การรับชำระ',
+    subtitle: 'เงินเข้าแล้วหรือยัง จับคู่กับใบแจ้งหนี้ไหนแล้ว และก้อนไหนยังไม่รู้ว่าของใคร',
+    scopeNote:
+      'แพลตฟอร์มอ่าน “สถานะ” ของเงินที่เข้ามาแล้ว ไม่รับเงิน ไม่โอน ไม่ตัดบัญชี และไม่เขียนกลับเข้า ERP (P8) ช่องทางรับชำระทั้งหมดยังเป็นเรื่องของธนาคารและ ERP เหมือนเดิม',
+    noData: 'ยังไม่มีรายการรับชำระ',
+    noDataHint: 'อัปโหลดชุดข้อมูล “รายการรับชำระ” ที่หน้านำเข้าข้อมูล',
+    received: 'รับชำระทั้งหมด',
+    receipts: 'รายการ',
+    applied: 'จับคู่แล้ว',
+    unidentified: 'ยังไม่รู้ว่าของใคร',
+    slaBreaches: 'เกิน SLA',
+    slaHint: 'ต้องปิดภายใน',
+    daysShort: ' วัน',
+    needsAttention: 'รายการที่ต้องจัดการ',
+    ambiguityNote:
+      'รายการที่เข้าได้หลายใบพร้อมกันจะไม่ถูกจับคู่อัตโนมัติ เพราะถ้าจับผิดใบ ใบที่เหลือจะดูเหมือนยังไม่จ่ายและถูกส่งเข้าคิวตามหนี้ — เงินที่ยังไม่ตัดยอดเสียหายน้อยกว่าเงินที่ตัดผิดใบ',
+    receipt: 'ใบเสร็จ / รายการ',
+    from: 'จาก',
+    amount: 'จำนวนเงิน',
+    reason: 'เหตุผล',
+    candidates: 'ใบที่เข้าเกณฑ์',
+    unknownPayer: 'ไม่ระบุผู้ชำระ',
+    expectedCash: 'เงินที่ควรเข้าตามกำหนด',
+    expectedCashNote:
+      'คำนวณจากวันครบกำหนดและคำรับปากที่ยืนยันแล้วเท่านั้น ไม่ใส่ความน่าจะเป็นและไม่ใช่ประมาณการกระแสเงินสด — ทันทีที่ตัวเลขนี้มี “โอกาสเข้า” ติดมาด้วย ฝ่ายการเงินจะเริ่มวางแผนกับมัน ซึ่งเกินขอบเขตของแพลตฟอร์ม',
+    window: 'ช่วงเวลา',
+    items: 'ใบ',
+    byChannel: 'แยกตามช่องทาง',
+    channel: 'ช่องทาง',
+  },
+  paymentReasons: {
+    no_party: 'เงินเข้าที่ยังไม่รู้ว่าของใคร',
+    no_open_item: 'ไม่มีใบค้างที่ตรงกัน',
+    ambiguous: 'เข้าได้หลายใบเท่ากัน',
+    outside_tolerance: 'อยู่นอกเกณฑ์ผ่อนผัน',
+    over_applied: 'ตัดยอดเกินมูลค่าใบ',
+  },
+  paymentChannels: {
+    cheque: 'เช็ค',
+    bill_of_exchange: 'ตั๋วแลกเงิน',
+    bank_transfer: 'โอนเงิน',
+    bill_payment: 'Bill Payment',
+    barcode: 'บาร์โค้ด',
+    e_payment: 'e-Payment',
+    direct_debit: 'หักบัญชีอัตโนมัติ',
+    cash: 'เงินสด',
+    other: 'อื่นๆ',
+  },
+  cashBuckets: {
+    overdue: 'เกินกำหนดแล้ว',
+    this_week: 'ภายใน 7 วัน',
+    next_week: '8–14 วัน',
+    d15_30: '15–30 วัน',
+    beyond_30: 'เกิน 30 วัน',
+  },
+  exceptions: {
+    title: 'รายการรับชำระผิดปกติ',
+    subtitle: 'เช็คคืน รายการตีกลับ และเงินเข้าที่จับคู่ไม่ได้ — พร้อมเส้นทางที่สัญญาณวิ่งต่อ',
+    signalNote:
+      'เช็คคืนคือข้อเท็จจริงเรื่องความสามารถในการชำระที่สดที่สุดเท่าที่องค์กรมี สดกว่างบการเงินปีที่แล้วมาก หน้านี้จึงไม่จบที่รายการ แต่ระบุด้วยว่าแต่ละสัญญาณวิ่งไปที่ไหนต่อ ตามหลัก P7',
+    noData: 'ยังไม่มีรายการผิดปกติ',
+    noDataHint: 'อัปโหลดชุดข้อมูล “รายการรับชำระผิดปกติ / เช็คคืน” ที่หน้านำเข้าข้อมูล',
+    open: 'ยังไม่ปิด',
+    slaBreaches: 'เกิน SLA',
+    oldest: 'เก่าสุด',
+    daysShort: ' วัน',
+    unidentifiedMoney: 'เงินที่ยังไม่รู้ว่าของใคร',
+    partiesSignalled: 'คู่สัญญาที่มีสัญญาณ',
+    signalsRaised: 'สัญญาณที่เกิดขึ้น',
+    noAutoBlockNote:
+      'ไม่มีสัญญาณใดในหน้านี้ระงับออเดอร์อัตโนมัติ เช็คคืน 2 ครั้งจะทำให้ออเดอร์ถัดไปขึ้นธงให้คนทบทวน แต่ไม่หยุดการส่งของเอง — ด้วยเหตุผลเดียวกับที่การจับกลุ่มทุนไม่เคยถูกนำไปใช้เองโดยไม่มีคนยืนยัน',
+    goesTo: 'ส่งต่อไปที่',
+    queue: 'คิวรายการที่ต้องปิด',
+    type: 'ประเภท',
+    party: 'คู่สัญญา',
+    noParty: 'ยังไม่ระบุคู่สัญญา',
+    reference: 'อ้างอิง',
+    amount: 'จำนวนเงิน',
+    occurred: 'วันที่เกิด',
+    source: 'รู้จาก',
+    action: 'ปิดรายการ',
+    resolve: 'แก้ไขแล้ว',
+    writeOff: 'ตัดเป็นหนี้สูญ',
+    note: 'บันทึกย่อ',
+    saving: 'กำลังบันทึก…',
+    chequeHistory: 'ประวัติเช็คคืนรายคู่สัญญา',
+    chequeHistoryNote:
+      'นับจากประวัติทั้งหมด ไม่ใช่เฉพาะในกรอบเวลาที่ใช้ตัดสินสัญญาณ เพราะคำถามที่คนอนุมัติวงเงินถามจริงคือ “รายนี้เคยเช็คคืนกี่ครั้ง” ไม่ใช่ “กี่ครั้งใน 60 วัน”',
+    returns: 'จำนวนครั้ง',
+    latest: 'ครั้งล่าสุด',
+  },
+  exceptionTypes: {
+    returned_cheque: 'เช็คคืน',
+    reversal: 'รายการตีกลับ',
+    mismatch: 'ยอดไม่ตรง',
+    missing: 'ไม่พบรายการ',
+    failed_transfer: 'โอนไม่สำเร็จ',
+    overpayment: 'ชำระเกิน',
+    unidentified_receipt: 'เงินเข้าที่ยังไม่รู้ว่าของใคร',
+  },
+  exceptionSources: {
+    bank: 'ธนาคาร',
+    erp: 'ERP',
+    manual_entry: 'คีย์เอง',
+  },
+  signalTargets: {
+    risk_index: 'คะแนนความเสี่ยง',
+    watchlist: 'Watchlist',
+    credit_review: 'ทบทวนเครดิต',
+    order_review: 'ธงเตือนตอนพิจารณาออเดอร์',
+    collection_escalation: 'เลื่อนขั้นการตามหนี้',
+  },
+  signalCodes: {
+    repeated_returned_cheque: 'เช็คคืนซ้ำ',
+    returned_cheque: 'เช็คคืน',
+    repeated_payment_failure: 'ชำระไม่สำเร็จซ้ำ',
+    unresolved_exception: 'ค้างเกิน SLA',
+  },
+  collection: {
+    title: 'คิวตามหนี้',
+    subtitle: 'วันนี้ต้องโทรหาใคร และต้องพูดเรื่องอะไร',
+    phaseNote:
+      'เฟสแรกมีแค่คิวกับบันทึกการติดต่อ ยังไม่บังคับขั้นตอนและยังไม่มี SLA ลำดับในคิวเป็นข้อเสนอ ไม่ใช่คำสั่ง — คุณเลื่อนได้เอง และระบบจะจำว่าคุณเลื่อนเป็นอะไร เพื่อเอาไปปรับเกณฑ์ให้ตรงกับวิธีทำงานจริง',
+    noData: 'ยังไม่มีเคสที่ต้องตาม',
+    noDataHint: 'กด “สร้างคิวจากยอดค้าง” เพื่อเปิดเคสจากลูกหนี้ที่เกินกำหนดอยู่ตอนนี้',
+    run: 'สร้างคิวจากยอดค้าง',
+    running: 'กำลังสร้าง…',
+    opened: 'เปิดใหม่',
+    closed: 'ปิดแล้ว',
+    toChase: 'เคสที่ต้องตาม',
+    overdueTotal: 'ยอดค้างรวม',
+    promisesDue: 'คำรับปากที่ถึงกำหนดวันนี้',
+    promisesBroken: 'ผิดคำรับปาก',
+    keptRate: 'รักษาคำพูด',
+    noPromiseHistory: 'ยังไม่มีประวัติคำรับปาก',
+    onHold: 'พักการตาม',
+    neverContacted: 'ยังไม่เคยติดต่อ',
+    todaysQueue: 'คิววันนี้',
+    queueNote:
+      'ยอดค้างในคิวหักเงินที่รับชำระแล้วจาก Module 13 ออกก่อนเสมอ การโทรไปทวงคนที่จ่ายไปเมื่อวานคือวิธีทำลายความน่าเชื่อถือของระบบที่เร็วที่สุด และเป็นเหตุผลที่ Module 13 ต้องเสร็จก่อนหน้านี้',
+    party: 'คู่สัญญา',
+    overdue: 'ค้างเกินกำหนด',
+    open: 'ยอดเปิด',
+    dpd: 'วันเกิน',
+    suggestedStage: 'ขั้นที่แนะนำ',
+    currentStage: 'ตอนนี้อยู่ขั้น',
+    why: 'เพราะอะไร',
+    priority: 'ลำดับ',
+    manualOrder: 'คุณจัดลำดับเอง',
+    log: 'บันทึก',
+    held: 'พักไว้',
+    contacted: 'ติดต่อล่าสุด',
+    daysShort: ' วันก่อน',
+    promiseBroken: 'ผิดคำรับปาก',
+    promiseDueToday: 'คำรับปากถึงกำหนดวันนี้',
+    logContact: 'บันทึกการติดต่อ',
+    outcome: 'ผลการติดต่อ',
+    note: 'รายละเอียด',
+    promiseAmount: 'ยอดที่รับปาก',
+    promiseDate: 'วันที่รับปากจะจ่าย',
+    addPromise: 'บันทึกคำรับปากจะจ่าย',
+    addDispute: 'บันทึกข้อโต้แย้ง',
+    disputeReason: 'เหตุผลข้อโต้แย้ง',
+    save: 'บันทึก',
+    saving: 'กำลังบันทึก…',
+    moveUp: 'ดันขึ้นบนคิว',
+    vsWatchlist:
+      'หน้านี้ตอบว่า “วันนี้ต้องตามใคร” ส่วน Watchlist ตอบว่า “ใครเสี่ยง” — ถ้าสองหน้านี้เริ่มทำงานทับกัน แปลว่าออกแบบผิด',
+  },
+  collectionStages: {
+    reminder: 'เตือนก่อนถึงกำหนด',
+    first_call: 'โทรครั้งแรก',
+    formal_notice: 'หนังสือทวงถาม',
+    final_notice: 'หนังสือทวงถามครั้งสุดท้าย',
+    legal_notice: 'หนังสือจากฝ่ายกฎหมาย',
+  },
+  collectionActivity: {
+    call: 'โทร',
+    email: 'อีเมล',
+    letter: 'จดหมาย',
+    visit: 'เข้าพบ',
+    note: 'บันทึก',
+  },
+  lateCharges: {
+    title: 'ค่าปรับชำระล่าช้า',
+    subtitle: 'คำนวณ เสนอ และเก็บตัวตั้งทุกตัวไว้ให้ตรวจได้',
+    scopeNote:
+      'แพลตฟอร์มคำนวณและเสนอเท่านั้น ใบเพิ่มหนี้ตัวจริงยังออกจาก ERP ตามหลัก P5 และ P8 — อัตราที่ใช้คืออัตราของวันที่เริ่มล่าช้า ไม่ใช่อัตราวันนี้ การคำนวณย้อนหลังจึงได้ตัวเลขเดิมเสมอ',
+    noRuns: 'ยังไม่เคยคำนวณ',
+    noRunsHint: 'กด “คำนวณค่าปรับ” เพื่อคำนวณจากลูกหนี้ที่เกินกำหนด ณ วันที่เลือก',
+    run: 'คำนวณค่าปรับ',
+    running: 'กำลังคำนวณ…',
+    items: 'รายการ',
+    skipped: 'ข้าม',
+    proposed: 'ค่าปรับที่เสนอ',
+    waivedTotal: 'ยอดที่ยกเว้น',
+    ofTotal: 'ของทั้งหมด',
+    asOf: 'ณ วันที่',
+    policyVersion: 'นโยบายเวอร์ชัน',
+    policyVersionHint: 'เก็บไว้เพื่อให้คำนวณซ้ำแล้วตรงเดิม',
+    proposedCharges: 'ค่าปรับที่เสนอ',
+    party: 'คู่สัญญา',
+    inputsNote:
+      'ทุกตัวตั้งอยู่บนหน้าจอข้างตัวเลข — เงินต้น อัตรา วันที่อัตรานั้นมีผล ฐานวัน และจำนวนวันที่ล่าช้า เพราะข้อโต้แย้งเรื่องค่าปรับแทบไม่เคยเถียงกันที่ยอดรวม แต่เถียงกันที่ตัวตั้ง',
+    document: 'เอกสาร',
+    principal: 'เงินต้น',
+    rate: 'อัตรา',
+    since: 'มีผล',
+    lateDays: 'วันล่าช้า',
+    afterGrace: 'หักผ่อนผัน',
+    daysShort: ' วัน',
+    charge: 'ค่าปรับ',
+    action: 'จัดการ',
+    waive: 'ยกเว้น',
+    waived: 'ยกเว้นแล้ว',
+    waiverReason: 'เหตุผลการยกเว้น',
+    waiverReasonRequired: 'ต้องระบุเหตุผล',
+    saving: 'กำลังบันทึก…',
+    waiverReport: 'รายงานการยกเว้นค่าปรับ',
+    waiverReportNote:
+      'นี่คือรายงานที่มีค่าที่สุดของโมดูลนี้ ไม่ใช่ยอดค่าปรับ — เพราะแทบไม่มีองค์กรไหนรวมได้ว่าปีที่แล้วยกเว้นไปเท่าไร ให้ใครบ้าง และใครเป็นคนอนุมัติ',
+    waivers: 'ครั้ง',
+    waivedAmount: 'ยอดที่ยกเว้น',
+    runHistory: 'ประวัติการคำนวณ',
+    policyUsed: 'นโยบายที่ใช้',
+    runStatus: {
+      draft: 'ร่าง',
+      approved: 'อนุมัติแล้ว',
+      issued: 'ออกเอกสารแล้ว',
+    },
   },
   legal: {
     title: 'สถานะทางกฎหมายและล้มละลาย',
@@ -602,6 +901,10 @@ const en: Dictionary = {
     collateral: 'Collateral',
     simulator: 'Term simulator',
     legal: 'Legal & insolvency',
+    payments: 'Payments',
+    exceptions: 'Exceptions',
+    collection: 'Collection',
+    lateCharges: 'Late charges',
     import: 'Import',
     admin: 'Tenant profile',
   },
@@ -611,6 +914,238 @@ const en: Dictionary = {
     decide: 'Decide',
     operate: 'Operate',
     setup: 'Setup',
+  },
+  payments: {
+    title: 'Payments received',
+    subtitle: 'Whether the money arrived, which invoice it settled, and which receipts belong to nobody',
+    scopeNote:
+      'The platform reads the status of money that has already moved. It does not receive, transfer, clear, or post anything back to the ERP (P8). Every payment channel stays with the bank and the ERP.',
+    noData: 'No receipts yet',
+    noDataHint: 'Upload the "Incoming payments" dataset on the import screen',
+    received: 'Total received',
+    receipts: 'receipts',
+    applied: 'Applied',
+    unidentified: 'Unidentified',
+    slaBreaches: 'Past SLA',
+    slaHint: 'close within',
+    daysShort: 'd',
+    needsAttention: 'Needs attention',
+    ambiguityNote:
+      'A receipt that fits several open items equally well is left unapplied. Applying it to one would make the others look unpaid and send them to a collector — cash sitting unapplied costs far less than cash on the wrong invoice.',
+    receipt: 'Receipt',
+    from: 'From',
+    amount: 'Amount',
+    reason: 'Reason',
+    candidates: 'Open items that fit',
+    unknownPayer: 'payer not stated',
+    expectedCash: 'Contractually due',
+    expectedCashNote:
+      'Built from due dates and confirmed promises only. It carries no probability and is not a cash forecast — the moment a number like this acquires a likelihood, treasury plans against it and the platform has become something it is not.',
+    window: 'Window',
+    items: 'Items',
+    byChannel: 'By channel',
+    channel: 'Channel',
+  },
+  paymentReasons: {
+    no_party: 'Unidentified receipt',
+    no_open_item: 'Nothing open to match',
+    ambiguous: 'Several items fit equally',
+    outside_tolerance: 'Outside tolerance',
+    over_applied: 'Applied beyond the item',
+  },
+  paymentChannels: {
+    cheque: 'Cheque',
+    bill_of_exchange: 'Bill of exchange',
+    bank_transfer: 'Bank transfer',
+    bill_payment: 'Bill payment',
+    barcode: 'Barcode',
+    e_payment: 'e-Payment',
+    direct_debit: 'Direct debit',
+    cash: 'Cash',
+    other: 'Other',
+  },
+  cashBuckets: {
+    overdue: 'Already overdue',
+    this_week: 'Within 7 days',
+    next_week: '8–14 days',
+    d15_30: '15–30 days',
+    beyond_30: 'Beyond 30 days',
+  },
+  exceptions: {
+    title: 'Payment exceptions',
+    subtitle: 'Returned cheques, reversals and money nobody can place — with where each signal goes next',
+    signalNote:
+      'A returned cheque is the freshest evidence an organisation holds about a counterparty’s ability to pay, far fresher than last year’s accounts. So this page does not end at a list: every signal states where it travels next (P7).',
+    noData: 'No exceptions yet',
+    noDataHint: 'Upload the "Payment exceptions & returned cheques" dataset on the import screen',
+    open: 'Open',
+    slaBreaches: 'Past SLA',
+    oldest: 'oldest',
+    daysShort: 'd',
+    unidentifiedMoney: 'Money not yet placed',
+    partiesSignalled: 'Counterparties signalled',
+    signalsRaised: 'Signals raised',
+    noAutoBlockNote:
+      'Nothing here blocks an order automatically. Two returned cheques flag the next order for a human to look at; they never stop a shipment on their own — the same reason group resolution is never applied without confirmation.',
+    goesTo: 'goes to',
+    queue: 'Open queue',
+    type: 'Type',
+    party: 'Counterparty',
+    noParty: 'not attributed',
+    reference: 'Reference',
+    amount: 'Amount',
+    occurred: 'Occurred',
+    source: 'Learned from',
+    action: 'Close',
+    resolve: 'Resolved',
+    writeOff: 'Write off',
+    note: 'Note',
+    saving: 'Saving…',
+    chequeHistory: 'Returned cheque history',
+    chequeHistoryNote:
+      'Counted over the whole record, not just the signal window: the question a credit approver actually asks is "how many times has this customer bounced a cheque", not "how many in the last 60 days".',
+    returns: 'Returns',
+    latest: 'Most recent',
+  },
+  exceptionTypes: {
+    returned_cheque: 'Returned cheque',
+    reversal: 'Reversal',
+    mismatch: 'Amount mismatch',
+    missing: 'Missing',
+    failed_transfer: 'Failed transfer',
+    overpayment: 'Overpayment',
+    unidentified_receipt: 'Unidentified receipt',
+  },
+  exceptionSources: {
+    bank: 'Bank',
+    erp: 'ERP',
+    manual_entry: 'Keyed in',
+  },
+  signalTargets: {
+    risk_index: 'Risk index',
+    watchlist: 'Watchlist',
+    credit_review: 'Credit review',
+    order_review: 'Order review flag',
+    collection_escalation: 'Collection escalation',
+  },
+  signalCodes: {
+    repeated_returned_cheque: 'Repeated returned cheques',
+    returned_cheque: 'Returned cheque',
+    repeated_payment_failure: 'Repeated payment failures',
+    unresolved_exception: 'Open past SLA',
+  },
+  collection: {
+    title: 'Collection queue',
+    subtitle: 'Who to call today, and what to say to them',
+    phaseNote:
+      'First phase: queue and contact log only. No enforced stages and no SLA countdown yet. The order is a suggestion — move it, and the system records what you moved it to, so the weights can be corrected against how the work is actually done.',
+    noData: 'No cases to chase',
+    noDataHint: 'Press "Build queue from overdue" to open a case for every counterparty currently past due',
+    run: 'Build queue from overdue',
+    running: 'Building…',
+    opened: 'opened',
+    closed: 'closed',
+    toChase: 'Cases to chase',
+    overdueTotal: 'Total overdue',
+    promisesDue: 'Promises due today',
+    promisesBroken: 'Promises broken',
+    keptRate: 'kept',
+    noPromiseHistory: 'no promise history yet',
+    onHold: 'On hold',
+    neverContacted: 'never contacted',
+    todaysQueue: 'Today’s queue',
+    queueNote:
+      'The overdue figures here are already net of receipts applied by Module 13. Calling a customer who paid yesterday destroys trust in the system faster than any missing feature, which is why payment monitoring ships before this module.',
+    party: 'Counterparty',
+    overdue: 'Overdue',
+    open: 'open',
+    dpd: 'DPD',
+    suggestedStage: 'Suggested stage',
+    currentStage: 'currently',
+    why: 'Why',
+    priority: 'Rank',
+    manualOrder: 'your order',
+    log: 'Log',
+    held: 'Held',
+    contacted: 'contacted',
+    daysShort: 'd ago',
+    promiseBroken: 'Promise broken',
+    promiseDueToday: 'Promise due today',
+    logContact: 'Log contact',
+    outcome: 'Outcome',
+    note: 'Notes',
+    promiseAmount: 'Amount',
+    promiseDate: 'Promised date',
+    addPromise: 'Record a promise to pay',
+    addDispute: 'Record a dispute',
+    disputeReason: 'Dispute reason',
+    save: 'Save',
+    saving: 'Saving…',
+    moveUp: 'Move to top',
+    vsWatchlist:
+      'This page answers "who do I call today". The watchlist answers "who is risky". If the two start overlapping, one of them is designed wrong.',
+  },
+  collectionStages: {
+    reminder: 'Reminder',
+    first_call: 'First call',
+    formal_notice: 'Formal notice',
+    final_notice: 'Final notice',
+    legal_notice: 'Legal notice',
+  },
+  collectionActivity: {
+    call: 'Call',
+    email: 'Email',
+    letter: 'Letter',
+    visit: 'Visit',
+    note: 'Note',
+  },
+  lateCharges: {
+    title: 'Late payment charges',
+    subtitle: 'Calculated and proposed, with every input kept where it can be checked',
+    scopeNote:
+      'The platform calculates and proposes. The debit note itself is issued by the ERP (P5, P8). The rate used is the one in force on the day the lateness began, never today’s — which is what makes recomputing a past period reproduce the original figures.',
+    noRuns: 'No runs yet',
+    noRunsHint: 'Press "Run charges" to calculate against overdue items as at a chosen date',
+    run: 'Run charges',
+    running: 'Running…',
+    items: 'items',
+    skipped: 'skipped',
+    proposed: 'Proposed',
+    waivedTotal: 'Waived',
+    ofTotal: 'of the total',
+    asOf: 'As at',
+    policyVersion: 'Policy version',
+    policyVersionHint: 'kept so a rerun reproduces the figures',
+    proposedCharges: 'Proposed charges',
+    party: 'Counterparty',
+    inputsNote:
+      'Every input sits next to every number — principal, rate, the date that rate took effect, day count, days late. Late-charge arguments are almost never about the total; they are about the inputs.',
+    document: 'Document',
+    principal: 'Principal',
+    rate: 'Rate',
+    since: 'from',
+    lateDays: 'Days late',
+    afterGrace: 'after grace of',
+    daysShort: 'd',
+    charge: 'Charge',
+    action: 'Action',
+    waive: 'Waive',
+    waived: 'Waived',
+    waiverReason: 'Reason',
+    waiverReasonRequired: 'A reason is required',
+    saving: 'Saving…',
+    waiverReport: 'Waiver report',
+    waiverReportNote:
+      'This, not the charge total, is the report the module is worth having for: almost no organisation can say how much it waived last year, to whom, and who approved it.',
+    waivers: 'Waivers',
+    waivedAmount: 'Waived',
+    runHistory: 'Run history',
+    policyUsed: 'Policy used',
+    runStatus: {
+      draft: 'draft',
+      approved: 'approved',
+      issued: 'issued',
+    },
   },
   legal: {
     title: 'Legal & insolvency',

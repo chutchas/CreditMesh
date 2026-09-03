@@ -18,9 +18,18 @@ export const CSV_ADAPTER_CAPABILITIES: AdapterCapabilities = {
     'financial_statement',
     'purchase_order',
     'collateral',
+    'order_block',
+    'legal_event',
+    'incoming_payment',
+    'payment_exception',
   ],
   syncModes: ['full_snapshot'],
   writeSupported: false,
   maxBatchSize: 50_000,
   watermarkField: null,
+  // A spreadsheet of receipts usually carries the invoice number the finance
+  // team wrote next to it, so the CSV route can reach the highest grain — but
+  // only per file. The importer downgrades to receipt_header when the column
+  // is absent rather than assuming the best case.
+  paymentGrain: 'matched_to_invoice',
 };

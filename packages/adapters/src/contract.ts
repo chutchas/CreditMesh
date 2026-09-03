@@ -19,7 +19,10 @@ export type CanonicalEntity =
   | 'supplier'
   | 'collateral'
   | 'financial_statement'
-  | 'legal_event';
+  | 'legal_event'
+  | 'incoming_payment'
+  | 'receipt_application'
+  | 'payment_exception';
 
 export interface AdapterCapabilities {
   adapterId: string;
@@ -30,6 +33,14 @@ export interface AdapterCapabilities {
   writeSupported: false;
   maxBatchSize: number;
   watermarkField: string | null;
+  /**
+   * §5.2 — the level of receipt detail the source system can actually give.
+   * Modules 13 and 15 switch on from this, not from optimism: an organisation
+   * that can only export a bank statement and one whose ERP already applies
+   * receipts to invoices need different features, and Core must never guess
+   * which it is dealing with.
+   */
+  paymentGrain: 'none' | 'receipt_header' | 'receipt_line' | 'matched_to_invoice';
 }
 
 /** §5.2 "report your own health" — every run, whether it succeeded or not. */

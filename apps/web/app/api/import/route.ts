@@ -12,7 +12,9 @@ import {
   applyPartyRows,
   applyRegistryProfileRows,
   applyShareholderRows,
+  applyIncomingPaymentRows,
   applyLegalEventRows,
+  applyPaymentExceptionRows,
   applyOrderBlockRows,
   applySupplierCommitmentRows,
   type ApplyContext,
@@ -128,6 +130,12 @@ export async function POST(request: Request) {
       break;
     case 'legal_event':
       apply = await applyLegalEventRows(ctx, result.rows, session.profile.legalScreening);
+      break;
+    case 'incoming_payment':
+      apply = await applyIncomingPaymentRows(ctx, result.rows, baseCurrency, session.profile.paymentPolicy);
+      break;
+    case 'payment_exception':
+      apply = await applyPaymentExceptionRows(ctx, result.rows, baseCurrency);
       break;
     default:
       return NextResponse.json({ error: `no writer for dataset "${datasetId}"` }, { status: 400 });

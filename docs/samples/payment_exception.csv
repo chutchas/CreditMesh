@@ -1,0 +1,7 @@
+entity,customer_code,type,amount,currency,occurred_at,reference,reason_code,reason,source,status
+E02,K-4471,returned_cheque,"3,100,000.00",THB,08/08/2026,CHQ-771204,R01,เงินในบัญชีไม่พอจ่าย,bank,open
+E02,K-4471,returned_cheque,"1,450,000.00",THB,02/09/2026,CHQ-771388,R01,เงินในบัญชีไม่พอจ่าย,manual_entry,open
+E01,C-1002,failed_transfer,"640,000.00",THB,25/08/2026,SCB2608250119,T14,โอนไม่สำเร็จ ปลายทางปฏิเสธรายการ,bank,open
+E01,C-1001,overpayment,"32,500.00",THB,20/08/2026,BBL2608200114,,ชำระเกินจากใบแจ้งหนี้ INV-24188,erp,open
+E02,K-4490,reversal,"5,900,000.00",THB,15/07/2026,KBK2607150233,,รายการถูกตีกลับหลังบันทึกรับชำระ,erp,open
+E01,C-1004,mismatch,"75,000.00",THB,10/07/2026,KBK2607100521,,ยอดโอนไม่ตรงกับใบแจ้งหนี้ที่ระบุ,erp,resolved

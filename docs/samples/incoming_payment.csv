@@ -1,0 +1,7 @@
+entity,receipt_no,customer_code,payer_name,payment_date,value_date,amount,currency,payment_method,invoice_no,bank_ref,cheque_no,cheque_due_date
+E01,RC-2026-0801,C-1001,Northgate Steel Trading Co Ltd,20/08/2026,20/08/2026,"2,480,000.00",THB,bank_transfer,INV-24188,BBL2608200114,,
+E02,RC-2026-0802,K-4471,,05/08/2026,05/08/2026,"3,100,000.00",THB,cheque,,,CHQ-771204,05/08/2026
+E01,RC-2026-0803,C-1003,,28/08/2026,28/08/2026,"1,900,000.00",THB,bill_payment,,KTB2608280881,,
+E01,RC-2026-0804,,SIAM METAL WORK CO.,29/08/2026,29/08/2026,"350,000.00",THB,bank_transfer,,SCB2608290442,,
+E02,RC-2026-0805,K-4512,,30/08/2026,31/08/2026,"820,000.00",THB,e_payment,INV-90455,,,
+E01,RC-2026-0806,C-1004,,01/09/2026,01/09/2026,"120,000.00",THB,bank_transfer,,KBK2609010777,,
