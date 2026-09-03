@@ -1546,7 +1546,10 @@ create table public.payment_exception (
   occurred_at       date not null,
   reason_code       text,
   reason_text       text,
-  reference         text,
+  -- NOT NULL because it is part of the natural key. A null here would make
+  -- every re-import insert a duplicate instead of updating: nulls never
+  -- conflict in a unique index, so the upsert would silently stop being one.
+  reference         text not null,
   -- bank | erp | manual_entry. manual_entry is supported from day one: in most
   -- organisations a returned cheque is known first from a phone call.
   source            text not null default 'manual_entry',
