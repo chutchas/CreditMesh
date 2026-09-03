@@ -52,7 +52,9 @@ export interface Dictionary {
   importer: Record<
     'title' | 'subtitle' | 'dataset' | 'chooseFile' | 'preview' | 'rowsRead' | 'rowsAccepted'
     | 'rowsRejected' | 'apply' | 'applied' | 'errors' | 'warnings' | 'row' | 'column' | 'message'
-    | 'mappedColumns' | 'unmapped' | 'dataAsOf' | 'history',
+    | 'mappedColumns' | 'unmapped' | 'dataAsOf' | 'history'
+    | 'browse' | 'changeFile' | 'dropHint' | 'noFile' | 'hintNeedFile' | 'hintNeedValidate'
+    | 'stepFile' | 'stepValidate' | 'stepApply',
     string
   >;
   admin: Record<'title' | 'profileVersion' | 'effectiveFrom' | 'valid' | 'invalid' | 'entities' | 'roles' | 'grades', string>;
@@ -197,6 +199,15 @@ const th: Dictionary = {
     unmapped: 'คอลัมน์ที่ไม่ได้ใช้',
     dataAsOf: 'ข้อมูล ณ วันที่',
     history: 'ประวัติการนำเข้า',
+    browse: 'เลือกไฟล์จากเครื่อง',
+    changeFile: 'เปลี่ยนไฟล์',
+    dropHint: 'หรือลากไฟล์ .csv มาวางตรงนี้',
+    noFile: 'ยังไม่ได้เลือกไฟล์',
+    hintNeedFile: 'เลือกไฟล์ก่อน แล้วปุ่มจะกดได้',
+    hintNeedValidate: 'ต้องตรวจให้ผ่านก่อน จึงจะนำเข้าจริงได้',
+    stepFile: '1 · เลือกไฟล์',
+    stepValidate: '2 · ตรวจ',
+    stepApply: '3 · นำเข้า',
   },
   admin: {
     title: 'Tenant Profile',
@@ -349,6 +360,15 @@ const en: Dictionary = {
     unmapped: 'Ignored columns',
     dataAsOf: 'Data as of',
     history: 'Import history',
+    browse: 'Choose a file',
+    changeFile: 'Change file',
+    dropHint: 'or drag a .csv file here',
+    noFile: 'No file chosen yet',
+    hintNeedFile: 'Choose a file to enable these',
+    hintNeedValidate: 'Validation has to pass before anything is written',
+    stepFile: '1 · File',
+    stepValidate: '2 · Validate',
+    stepApply: '3 · Import',
   },
   admin: {
     title: 'Tenant profile',

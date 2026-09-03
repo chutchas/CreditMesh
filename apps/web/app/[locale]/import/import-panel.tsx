@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Dictionary } from '../../../lib/i18n/dictionaries';
 
@@ -35,8 +35,18 @@ export default function ImportPanel({
   const [applied, setApplied] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const dataset = datasets.find((d) => d.id === datasetId);
+  const validated = report !== null && report.rowsAccepted > 0;
+
+  function chooseFile(next: File | null) {
+    setFile(next);
+    setReport(null);
+    setApplied(null);
+    setError(null);
+  }
 
   async function send(dryRun: boolean) {
     if (!file) return;
@@ -78,6 +88,7 @@ export default function ImportPanel({
               setDatasetId(e.target.value);
               setReport(null);
               setApplied(null);
+              setError(null);
             }}
             className="mt-1 w-full rounded border border-[var(--color-line)] px-2 py-1.5 text-sm"
           >
@@ -99,40 +110,98 @@ export default function ImportPanel({
           />
         </label>
 
-        <label className="mt-3 block text-sm">
-          <span className="text-xs text-[var(--color-muted)]">{labels.chooseFile}</span>
+        {/* The browser's own file input is easy to miss next to two large
+            buttons, and people reasonably read "Import" as the thing that opens
+            the file dialog. So the input is hidden behind a drop zone that
+            looks like what it is, and the numbered steps say what order the
+            three actions happen in. */}
+        <div className="mt-3">
+          <span className="text-xs text-[var(--color-muted)]">
+            <span className="font-medium">{labels.stepFile}</span> — {labels.chooseFile}
+          </span>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => fileInput.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.current?.click();
+              }
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              chooseFile(e.dataTransfer.files?.[0] ?? null);
+            }}
+            className={`mt-1 cursor-pointer rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors ${
+              dragging
+                ? 'border-[var(--color-brand)] bg-[#eef4fa]'
+                : file
+                  ? 'border-[#abdfb8] bg-[#f0fdf4]'
+                  : 'border-[var(--color-line)] bg-[var(--color-canvas)] hover:border-[var(--color-brand)]'
+            }`}
+          >
+            {file ? (
+              <>
+                <p className="truncate text-sm font-medium">{file.name}</p>
+                <p className="tabular mt-0.5 text-xs text-[var(--color-muted)]">
+                  {(file.size / 1024).toFixed(1)} KB · {labels.changeFile}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-[var(--color-brand)]">{labels.browse}</p>
+                <p className="mt-0.5 text-xs text-[var(--color-muted)]">{labels.dropHint}</p>
+              </>
+            )}
+          </div>
           <input
+            ref={fileInput}
             type="file"
             accept=".csv,text/csv"
-            onChange={(e) => {
-              setFile(e.target.files?.[0] ?? null);
-              setReport(null);
-              setApplied(null);
-            }}
-            className="mt-1 w-full text-sm"
+            onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
+            className="hidden"
           />
-        </label>
+        </div>
 
         <div className="mt-4 flex gap-2">
           <button
             type="button"
             disabled={!file || busy}
             onClick={() => send(true)}
-            className="flex-1 rounded border border-[var(--color-line)] px-3 py-1.5 text-sm disabled:opacity-50"
+            className="flex-1 rounded border border-[var(--color-line)] px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
+            <span className="block text-[10px] uppercase tracking-wide text-[var(--color-muted)]">
+              {labels.stepValidate}
+            </span>
             {labels.preview}
           </button>
           <button
             type="button"
             // Applying is only offered once a validation run has actually
             // succeeded on rows — never straight from the file picker.
-            disabled={!file || busy || !report || report.rowsAccepted === 0}
+            disabled={!file || busy || !validated}
             onClick={() => send(false)}
-            className="flex-1 rounded bg-[var(--color-brand)] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+            className="flex-1 rounded bg-[var(--color-brand)] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
+            <span className="block text-[10px] uppercase tracking-wide text-white/70">{labels.stepApply}</span>
             {labels.apply}
           </button>
         </div>
+
+        {/* A disabled button that does not say why it is disabled is the same
+            problem in a different shape. */}
+        {!file ? (
+          <p className="mt-2 text-center text-xs text-[var(--color-muted)]">{labels.hintNeedFile}</p>
+        ) : !validated ? (
+          <p className="mt-2 text-center text-xs text-[var(--color-muted)]">{labels.hintNeedValidate}</p>
+        ) : null}
 
         {dataset ? (
           <div className="mt-5 border-t border-[var(--color-line)] pt-3">
