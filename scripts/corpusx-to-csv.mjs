@@ -21,9 +21,11 @@
  *               two numbers for one thing on two screens, and the day they
  *               disagree is the day nobody trusts either.
  *
- * The directors, shareholders, change-history and related-company sheets are
- * read if present and reported as empty if not — in the exports seen so far
- * they are empty, which matters because those are the sheets Module 2 needs.
+ * The directors, shareholders, change-history and related-company sheets hold
+ * PNG screenshots anchored over an empty grid, so a cell reader finds nothing
+ * in them. They are counted and reported rather than assumed absent, and the
+ * PDF of the same pages — which has a real text layer — is what
+ * corpusx-pdf-to-csv.mjs reads instead.
  *
  * Usage:  node scripts/corpusx-to-csv.mjs <files or dir> --out docs/imported
  */
@@ -253,8 +255,8 @@ function convert(file) {
   };
 
   // Reported rather than assumed. These are the sheets Module 2 depends on, and
-  // in every export seen so far they are empty — a silent zero here would look
-  // like "this company has no directors" rather than "we were not sent any".
+  // they hold images rather than cells — a silent zero here would look like
+  // "this company has no directors" rather than "we cannot read this sheet".
   const coverage = {
     directors: read('กรรมการและผู้ถือหุ้น').size,
     changeHistory: read('ประวัติการเปลี่ยนแปลง').size,
@@ -343,7 +345,7 @@ writeFileSync(
 
 console.log(`\nwrote ${statements.length} statement rows and ${registries.length} registry rows to ${outDir}`);
 if (gaps.length > 0) {
-  console.log('\nsheets that arrived empty — Module 2 group resolution has nothing to work from for these:');
+  console.log('\nsheets with no readable cells (they hold screenshots) — run corpusx-pdf-to-csv.mjs on the PDF of these pages:');
   for (const g of gaps) console.log(`  ${g.taxId}  ${g.empty.join(', ')}`);
 }
 }

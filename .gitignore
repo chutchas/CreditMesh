@@ -14,3 +14,8 @@ supabase/.branches/
 apps/web/.env.local
 dist-types/
 .build-src.tar.gz
+
+# Converted CorpusX output. Director and shareholder names are personal data
+# under the PDPA — the source pages say so themselves — and a git history is
+# the one place you cannot delete them from.
+docs/imported/
