@@ -209,7 +209,7 @@ function toCsv(headers, rows) {
 
 /* ------------------------------------------------------------------ */
 
-function convert(file) {
+export function convert(file) {
   const strings = sharedStrings(file);
   const sheets = new Map(sheetIndex(file).map((s) => [s.name, s.path]));
   const read = (name) => (sheets.has(name) ? readSheet(file, sheets.get(name), strings) : new Map());

@@ -6,6 +6,15 @@ company at a time. Channel 1 (`manual_upload`) is exactly the channel for that,
 and two scripts stand between the two:
 
 ```
+node scripts/corpusx-prepare.mjs <dir of pdf + xlsx> --out docs/imported
+```
+
+That runs both readers, joins them on the taxpayer id, and writes a numbered
+set with an `UPLOAD.md` saying which dataset each file goes to and in what
+order. For a demo runbook built on it, see `corpusx-demo-runbook.md`. The two
+readers can also be run on their own:
+
+```
 node scripts/corpusx-to-csv.mjs     <xlsx files or dir> --out docs/imported
 node scripts/corpusx-pdf-to-csv.mjs <pdf files or dir>  --out docs/imported
 ```
